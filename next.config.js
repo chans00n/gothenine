@@ -2,7 +2,7 @@ const withPWA = require('next-pwa')({
   dest: 'public',
   register: true,
   skipWaiting: true,
-  disable: process.env.NODE_ENV === 'development',
+  disable: true, // Temporarily disable PWA to debug 500 error
   buildExcludes: [/middleware-manifest.json$/],
   runtimeCaching: [
     {
@@ -90,17 +90,18 @@ const nextConfig = {
     }
     
     // Add polyfills for server-side rendering
-    config.plugins = config.plugins || []
-    const webpack = require('webpack')
+    // Temporarily disabled to debug 500 error
+    // config.plugins = config.plugins || []
+    // const webpack = require('webpack')
     
-    if (isServer) {
-      // Provide fallbacks for browser globals on the server
-      config.plugins.push(
-        new webpack.ProvidePlugin({
-          self: [require.resolve('./lib/polyfills-provider.js'), 'self'],
-        })
-      )
-    }
+    // if (isServer) {
+    //   // Provide fallbacks for browser globals on the server
+    //   config.plugins.push(
+    //     new webpack.ProvidePlugin({
+    //       self: [require.resolve('./lib/polyfills-provider.js'), 'self'],
+    //     })
+    //   )
+    // }
     
     // Optimize bundle size
     if (!isServer) {

@@ -6,6 +6,7 @@ import { NotificationBell } from '@/components/navigation/notification-bell'
 import { ChallengeProvider } from '@/contexts/challenge-context'
 import { NotificationPermission } from '@/components/notifications/notification-permission-simple'
 import { AuthGuard } from '@/components/auth/auth-guard'
+import { Logo } from '@/components/ui/logo'
 import Link from 'next/link'
 import { User } from 'lucide-react'
 
@@ -41,11 +42,8 @@ export default async function AuthenticatedLayout({
           <header className="flex-shrink-0 bg-background/80 backdrop-blur-sm border-b">
             <div className="flex items-center justify-between px-4 h-14">
               <div className="flex items-center gap-3">
-                <Link href="/dashboard" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-                  <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                    <span className="text-primary-foreground font-bold text-sm">09</span>
-                  </div>
-                  <span className="font-semibold text-sm hidden sm:inline">75 Hard</span>
+                <Link href="/dashboard" className="flex items-center hover:opacity-80 transition-opacity">
+                  <Logo width={100} height={32} />
                 </Link>
               </div>
               <div className="flex items-center gap-2">

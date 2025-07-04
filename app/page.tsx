@@ -5,8 +5,9 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { Logo } from '@/components/ui/logo'
 import { motion } from 'framer-motion'
-import { ChevronRight, Target } from 'lucide-react'
+import { ChevronRight } from 'lucide-react'
 
 export default function Home() {
   const router = useRouter()
@@ -30,12 +31,11 @@ export default function Home() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="space-y-2"
+          className="space-y-4"
         >
-          <Target className="h-16 w-16 text-primary mx-auto mb-4" />
-          <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
-            75 Hard Tracker
-          </h1>
+          <div className="flex justify-center mb-6">
+            <Logo width={200} height={64} />
+          </div>
           <p className="text-xl text-muted-foreground">
             Transform Your Life in{' '}
             <span className="text-primary font-semibold">75 Days</span>

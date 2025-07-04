@@ -21,8 +21,6 @@ async function getCommunityData() {
       console.error('Error fetching users:', usersError)
       return { users: [], currentUserId: user.id }
     }
-    
-    console.log('Fetched users:', users?.length || 0, users)
 
     // Get all active challenges
     const { data: challenges, error: challengesError } = await supabase
@@ -33,8 +31,6 @@ async function getCommunityData() {
     if (challengesError) {
       console.error('Error fetching challenges:', challengesError)
     }
-    
-    console.log('Fetched challenges:', challenges?.length || 0)
 
     // Get today's progress for all users
     const today = new Date().toISOString().split('T')[0]
@@ -46,8 +42,6 @@ async function getCommunityData() {
     if (progressError) {
       console.error('Error fetching progress:', progressError)
     }
-    
-    console.log('Fetched progress:', todayProgress?.length || 0)
 
     // Transform and combine the data - only show users with active challenges
     const communityUsers = (users || [])
@@ -84,8 +78,6 @@ async function getCommunityData() {
       }
     })
 
-    console.log('Final community users:', communityUsers.length, communityUsers)
-    
     return {
       users: communityUsers,
       currentUserId: user.id

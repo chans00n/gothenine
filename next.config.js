@@ -8,6 +8,11 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   
+  // Performance optimizations
+  experimental: {
+    optimizePackageImports: ['lucide-react', 'date-fns'],
+  },
+  
   // Image optimization
   images: {
     remotePatterns: [
@@ -18,7 +23,11 @@ const nextConfig = {
         pathname: '/storage/v1/object/public/**',
       },
     ],
+    formats: ['image/webp', 'image/avif'],
   },
+  
+  // Compression
+  compress: true,
 }
 
 module.exports = nextConfig

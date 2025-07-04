@@ -5,6 +5,7 @@ import { OfflineBanner } from '@/components/ui/offline-indicator'
 import { NotificationBell } from '@/components/navigation/notification-bell'
 import { ChallengeProvider } from '@/contexts/challenge-context'
 import { NotificationPermission } from '@/components/notifications/notification-permission-simple'
+import { AuthGuard } from '@/components/auth/auth-guard'
 import Link from 'next/link'
 import { User } from 'lucide-react'
 

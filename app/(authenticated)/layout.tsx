@@ -38,9 +38,11 @@ export default async function AuthenticatedLayout({
         
         {/* Main content with padding for desktop nav */}
         <div className="flex flex-col flex-1 md:pl-16">
-          {/* Minimal header bar with safe area padding */}
-          <header className="flex-shrink-0 bg-background/80 backdrop-blur-sm border-b pt-safe">
-            <div className="flex items-center justify-between px-4 h-14">
+          {/* Safe area wrapper for iOS */}
+          <div className="pt-safe-6">
+            {/* Minimal header bar */}
+            <header className="flex-shrink-0 bg-background/80 backdrop-blur-sm border-b">
+              <div className="flex items-center justify-between px-4 h-14">
               <div className="flex items-center gap-3">
                 <Link href="/dashboard" className="flex items-center hover:opacity-80 transition-opacity">
                   <Logo width={100} height={32} />
@@ -63,7 +65,8 @@ export default async function AuthenticatedLayout({
                 </Link>
               </div>
             </div>
-          </header>
+            </header>
+          </div>
           
           {/* Content area - scrollable */}
           <main className="flex-1 overflow-hidden pb-16 md:pb-0">

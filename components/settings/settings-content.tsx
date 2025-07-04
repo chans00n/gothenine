@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { User, Bell, Moon, Shield, Smartphone, ChevronRight, Camera, Upload, Settings, CheckCircle2, Calendar, Trophy } from "lucide-react"
+import { User, Bell, Moon, Shield, Smartphone, ChevronRight, Camera, Upload, Settings, CheckCircle2, Calendar, Trophy, LogOut } from "lucide-react"
 import Link from "next/link"
 import { useTheme } from "@/components/theme-provider"
 import { createClient } from '@/lib/supabase/client'
@@ -152,6 +152,23 @@ export function SettingsContent({ initialData }: SettingsContentProps) {
     } catch (error) {
       console.error('Error deleting account:', error)
       toast.error('Failed to delete account')
+    }
+  }
+
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut()
+      if (error) throw error
+      
+      // Clear any local storage data
+      localStorage.removeItem('75hard-notification-dismissed')
+      localStorage.removeItem('75hard-offline-mode')
+      
+      toast.success('Logged out successfully')
+      router.push('/auth/login')
+    } catch (error) {
+      console.error('Error logging out:', error)
+      toast.error('Failed to log out')
     }
   }
 
@@ -406,6 +423,15 @@ export function SettingsContent({ initialData }: SettingsContentProps) {
                     Delete Account
                   </Button>
                 </div>
+                <Separator />
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={handleLogout}
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Log Out
+                </Button>
                 <div className="p-4 rounded-lg bg-muted/50">
                   <p className="text-sm text-muted-foreground">
                     Your data is securely stored and encrypted. You can download or delete your account data at any time.

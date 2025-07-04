@@ -4,11 +4,12 @@ const withPWA = require('next-pwa')({
   skipWaiting: true,
   disable: process.env.NODE_ENV === 'development',
   buildExcludes: [/middleware-manifest.json$/],
-  importScripts: [
-    '/sw-background-sync.js',
-    '/sw-timer.js',
-    '/sw-notifications.js'
-  ],
+  // Temporarily remove importScripts to test if this is causing the issue
+  // importScripts: [
+  //   '/sw-background-sync.js',
+  //   '/sw-timer.js',
+  //   '/sw-notifications.js'
+  // ],
   runtimeCaching: [
     {
       urlPattern: /^https?.*/,

@@ -14,8 +14,8 @@ import { DeviceTest } from '@/components/device-test'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: '75 Hard Tracker',
-  description: 'Track your 75 Hard Challenge progress',
+  title: 'Go the Nine',
+  description: 'Track your Go the Nine Challenge progress',
   manifest: '/manifest.json',
 }
 

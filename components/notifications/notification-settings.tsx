@@ -23,7 +23,7 @@ import {
   AlertCircle
 } from 'lucide-react'
 import { getNotificationService, type NotificationPreferences } from '@/lib/services/notification-service'
-import { NotificationPermission } from './notification-permission'
+import { NotificationPermission } from './notification-permission-simple'
 
 interface NotificationSettingsProps {
   timezone: string

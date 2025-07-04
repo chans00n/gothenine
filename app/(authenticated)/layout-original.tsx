@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { AppLayout } from '@/components/layout/app-layout'
 import { ChallengeProvider } from '@/contexts/challenge-context'
-import { NotificationPermission } from '@/components/notifications/notification-permission'
+import { NotificationPermission } from '@/components/notifications/notification-permission-simple'
 
 export default async function AuthenticatedLayout({
   children,

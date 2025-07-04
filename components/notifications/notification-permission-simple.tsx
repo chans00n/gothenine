@@ -5,8 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Bell, BellOff, CheckCircle2, X } from 'lucide-react'
-import { getNotificationService } from '@/lib/services/notification-service'
-import { motion, AnimatePresence } from '@/lib/utils/framer-motion-wrapper'
 
 interface NotificationPermissionProps {
   onPermissionGranted?: () => void
@@ -24,22 +22,24 @@ export function NotificationPermission({
   const [isDismissed, setIsDismissed] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isClient, setIsClient] = useState(false)
+  const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
     // Mark as client-side
     setIsClient(true)
     
-    // Check notification support and permission
-    const notificationService = getNotificationService()
-    
-    if (notificationService.isNotificationSupported()) {
-      setPermission(notificationService.getPermissionStatus())
+    // Check notification support and permission on client only
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setPermission(Notification.permission)
     }
 
     // Check if user has previously dismissed
     const dismissed = localStorage.getItem('75hard-notification-dismissed')
     if (dismissed === 'true') {
       setIsDismissed(true)
+    } else if (Notification.permission === 'default') {
+      // Show banner with a slight delay for better UX
+      setTimeout(() => setIsVisible(true), 500)
     }
   }, [])
 
@@ -48,14 +48,18 @@ export function NotificationPermission({
     setError(null)
 
     try {
-      const notificationService = getNotificationService()
-      const result = await notificationService.requestPermission()
+      if (!('Notification' in window)) {
+        throw new Error('Notifications not supported')
+      }
+
+      const result = await Notification.requestPermission()
       setPermission(result)
 
       if (result === 'granted') {
         onPermissionGranted?.()
         // Remove dismissed state
         localStorage.removeItem('75hard-notification-dismissed')
+        setIsVisible(false)
       } else if (result === 'denied') {
         onPermissionDenied?.()
       }
@@ -69,6 +73,7 @@ export function NotificationPermission({
 
   const handleDismiss = () => {
     setIsDismissed(true)
+    setIsVisible(false)
     localStorage.setItem('75hard-notification-dismissed', 'true')
   }
 
@@ -78,8 +83,7 @@ export function NotificationPermission({
   }
 
   // Don't show if not supported
-  const notificationService = getNotificationService()
-  if (!notificationService.isNotificationSupported()) {
+  if (!('Notification' in window)) {
     return null
   }
 
@@ -126,15 +130,14 @@ export function NotificationPermission({
     )
   }
 
-  // Banner version for main app
+  // Banner version for main app - with simple fade transition
   return (
-    <AnimatePresence>
+    <>
       {permission === 'default' && !isDismissed && (
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          className="fixed top-4 left-4 right-4 z-50 max-w-lg mx-auto"
+        <div 
+          className={`fixed top-4 left-4 right-4 z-50 max-w-lg mx-auto transition-all duration-300 ${
+            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'
+          }`}
         >
           <Card className="shadow-lg border-primary/20">
             <CardHeader className="pb-3">
@@ -212,8 +215,8 @@ export function NotificationPermission({
               </div>
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
       )}
-    </AnimatePresence>
+    </>
   )
 }

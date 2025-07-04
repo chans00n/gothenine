@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import confetti from 'canvas-confetti'
 import { Trophy, Star, Flame, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -29,36 +28,46 @@ export function CompletionCelebration({
 
   useEffect(() => {
     if (show && !hasShownConfetti) {
-      // Trigger confetti
-      const duration = 3000
-      const animationEnd = Date.now() + duration
-      const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 }
+      // Dynamically import confetti to avoid build issues
+      const triggerConfetti = async () => {
+        try {
+          const confetti = (await import('canvas-confetti')).default
+          
+          // Trigger confetti
+          const duration = 3000
+          const animationEnd = Date.now() + duration
+          const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 }
 
-      function randomInRange(min: number, max: number) {
-        return Math.random() * (max - min) + min
+          const randomInRange = (min: number, max: number) => {
+            return Math.random() * (max - min) + min
+          }
+
+          const interval: any = setInterval(() => {
+            const timeLeft = animationEnd - Date.now()
+
+            if (timeLeft <= 0) {
+              return clearInterval(interval)
+            }
+
+            const particleCount = 50 * (timeLeft / duration)
+            
+            confetti({
+              ...defaults,
+              particleCount,
+              origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
+            })
+            confetti({
+              ...defaults,
+              particleCount,
+              origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
+            })
+          }, 250)
+        } catch (error) {
+          console.error('Failed to load confetti:', error)
+        }
       }
 
-      const interval: any = setInterval(function() {
-        const timeLeft = animationEnd - Date.now()
-
-        if (timeLeft <= 0) {
-          return clearInterval(interval)
-        }
-
-        const particleCount = 50 * (timeLeft / duration)
-        
-        confetti({
-          ...defaults,
-          particleCount,
-          origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
-        })
-        confetti({
-          ...defaults,
-          particleCount,
-          origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
-        })
-      }, 250)
-
+      triggerConfetti()
       setHasShownConfetti(true)
     }
   }, [show, hasShownConfetti])

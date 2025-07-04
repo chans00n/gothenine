@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import confetti from 'canvas-confetti'
 import { Trophy, Star, Sparkles } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -26,57 +25,68 @@ export function ProgressCelebration({
       setIsVisible(true)
       
       // Trigger confetti based on celebration type
-      if (type === 'complete') {
-        // Epic celebration for completing 75 Hard
-        const duration = 5 * 1000
-        const animationEnd = Date.now() + duration
-        const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 }
+      const triggerConfetti = async () => {
+        try {
+          // Dynamically import confetti to avoid build issues
+          const confetti = (await import('canvas-confetti')).default
+          
+          if (type === 'complete') {
+            // Epic celebration for completing 75 Hard
+            const duration = 5 * 1000
+            const animationEnd = Date.now() + duration
+            const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 }
 
-        function randomInRange(min: number, max: number) {
-          return Math.random() * (max - min) + min
-        }
+            const randomInRange = (min: number, max: number) => {
+              return Math.random() * (max - min) + min
+            }
 
-        const interval: any = setInterval(function() {
-          const timeLeft = animationEnd - Date.now()
+            const interval: any = setInterval(() => {
+              const timeLeft = animationEnd - Date.now()
 
-          if (timeLeft <= 0) {
-            return clearInterval(interval)
+              if (timeLeft <= 0) {
+                return clearInterval(interval)
+              }
+
+              const particleCount = 100 * (timeLeft / duration)
+              confetti({
+                ...defaults,
+                particleCount,
+                origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
+              })
+              confetti({
+                ...defaults,
+                particleCount,
+                origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
+              })
+            }, 250)
+          } else if (type === 'milestone') {
+            // Milestone celebration
+            confetti({
+              particleCount: 100,
+              spread: 70,
+              origin: { y: 0.6 }
+            })
+          } else if (type === 'day') {
+            // Day complete celebration
+            confetti({
+              particleCount: 50,
+              angle: 60,
+              spread: 55,
+              origin: { x: 0 }
+            })
+            confetti({
+              particleCount: 50,
+              angle: 120,
+              spread: 55,
+              origin: { x: 1 }
+            })
           }
-
-          const particleCount = 100 * (timeLeft / duration)
-          confetti({
-            ...defaults,
-            particleCount,
-            origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
-          })
-          confetti({
-            ...defaults,
-            particleCount,
-            origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
-          })
-        }, 250)
-      } else if (type === 'milestone') {
-        // Milestone celebration
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 }
-        })
-      } else if (type === 'day') {
-        // Day complete celebration
-        confetti({
-          particleCount: 50,
-          angle: 60,
-          spread: 55,
-          origin: { x: 0 }
-        })
-        confetti({
-          particleCount: 50,
-          angle: 120,
-          spread: 55,
-          origin: { x: 1 }
-        })
+        } catch (error) {
+          console.error('Failed to load confetti:', error)
+        }
       }
+
+      triggerConfetti()
 
       // Auto-hide after delay
       const timer = setTimeout(() => {

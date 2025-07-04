@@ -13,7 +13,6 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { toast } from 'sonner'
-import html2canvas from 'html2canvas'
 import { AchievementBadge, type BadgeType } from '@/components/ui/achievement-badge'
 import { ChartConfig, ChartContainer } from '@/components/ui/chart'
 import { RadialBarChart, RadialBar, PolarGrid, PolarRadiusAxis, Label } from 'recharts'
@@ -63,6 +62,8 @@ export function ProgressShare({ stats, userName = "User" }: ProgressShareProps) 
       const element = document.getElementById('progress-share-card')
       if (!element) return
 
+      // Dynamically import html2canvas to avoid build issues
+      const html2canvas = (await import('html2canvas')).default
       const canvas = await html2canvas(element, {
         backgroundColor: '#ffffff',
         scale: 2,
@@ -94,6 +95,8 @@ export function ProgressShare({ stats, userName = "User" }: ProgressShareProps) 
       const element = document.getElementById('progress-share-card')
       if (!element) return
 
+      // Dynamically import html2canvas to avoid build issues
+      const html2canvas = (await import('html2canvas')).default
       const canvas = await html2canvas(element, {
         backgroundColor: '#ffffff',
         scale: 2,

@@ -274,7 +274,7 @@ export default async function DashboardPage() {
 
     if (fetchError && fetchError.code !== 'PGRST116') {
       console.error('Error fetching progress:', fetchError)
-      return
+      throw new Error('Failed to fetch current progress')
     }
 
     const existingTasks = currentProgress?.tasks || {}
@@ -308,13 +308,14 @@ export default async function DashboardPage() {
 
       if (error) {
         console.error('Error updating progress:', error)
-      } else {
-        console.log('Progress updated successfully')
-        revalidatePath('/dashboard')
-        revalidatePath('/checklist')
-        revalidatePath('/calendar')
-        revalidateTag('daily-progress')
+        throw new Error('Failed to update task')
       }
+      
+      console.log('Progress updated successfully')
+      revalidatePath('/dashboard')
+      revalidatePath('/checklist')
+      revalidatePath('/calendar')
+      revalidateTag('daily-progress')
     } else {
       const { error } = await supabase
         .from('daily_progress')
@@ -329,13 +330,14 @@ export default async function DashboardPage() {
 
       if (error) {
         console.error('Error inserting progress:', error)
-      } else {
-        console.log('Progress inserted successfully')
-        revalidatePath('/dashboard')
-        revalidatePath('/checklist')
-        revalidatePath('/calendar')
-        revalidateTag('daily-progress')
+        throw new Error('Failed to create task progress')
       }
+      
+      console.log('Progress inserted successfully')
+      revalidatePath('/dashboard')
+      revalidatePath('/checklist')
+      revalidatePath('/calendar')
+      revalidateTag('daily-progress')
     }
   }
 

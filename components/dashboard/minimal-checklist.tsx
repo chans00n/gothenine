@@ -56,27 +56,20 @@ export function MinimalChecklist({ tasks, onTaskToggle }: MinimalChecklistProps)
       // Server update - use task definition ID for persistence
       await onTaskToggle(taskDefinitionId, newCompleted)
       
-      // Clear optimistic state for this task after successful update
-      // This ensures the server state takes precedence
-      setTimeout(() => {
-        setOptimisticTasks(prev => {
-          const newState = { ...prev }
-          delete newState[taskId]
-          return newState
-        })
-        setPendingTasks(prev => {
-          const newSet = new Set(prev)
-          newSet.delete(taskId)
-          return newSet
-        })
-      }, 100)
-    } catch (error) {
-      // Revert optimistic update on error
-      setOptimisticTasks(prev => {
-        const newState = { ...prev }
-        delete newState[taskId]
-        return newState
+      // Remove from pending tasks
+      setPendingTasks(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(taskId)
+        return newSet
       })
+      
+      // Don't clear optimistic state immediately - let the page refresh handle it
+      // This prevents the flickering issue
+    } catch (error) {
+      console.error('Error toggling task:', error)
+      
+      // Revert optimistic update on error
+      setOptimisticTasks(prev => ({ ...prev, [taskId]: currentCompleted }))
       setPendingTasks(prev => {
         const newSet = new Set(prev)
         newSet.delete(taskId)
@@ -123,7 +116,7 @@ export function MinimalChecklist({ tasks, onTaskToggle }: MinimalChecklistProps)
                   ? "bg-primary/5 border-primary/20 shadow-sm" 
                   : "bg-background border-border hover:border-primary/30 hover:bg-primary/5"
               )}
-              onClick={() => !pendingTasks.has(task.id) && handleToggle(task.id, task.taskDefinitionId, task.completed)}
+              onClick={() => !pendingTasks.has(task.id) && handleToggle(task.id, task.taskDefinitionId, isCompleted)}
             >
               {/* Completion indicator line */}
               <div className={cn(

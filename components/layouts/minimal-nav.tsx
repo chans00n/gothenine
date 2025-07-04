@@ -3,11 +3,12 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { Home, Calendar, TrendingUp, Settings } from 'lucide-react'
+import { Home, Calendar, TrendingUp, Settings, Users } from 'lucide-react'
 
 const navItems = [
   { href: '/dashboard', label: 'Today', icon: Home },
   { href: '/calendar', label: 'Calendar', icon: Calendar },
+  { href: '/community', label: 'Community', icon: Users },
   { href: '/progress', label: 'Progress', icon: TrendingUp },
   { href: '/settings', label: 'Settings', icon: Settings },
 ]

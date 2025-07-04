@@ -17,7 +17,7 @@ export function ReadyStep({ data }: ReadyStepProps) {
         </div>
         <h2 className="text-4xl font-bold">You're All Set!</h2>
         <p className="text-xl text-muted-foreground">
-          {data.displayName ? `${data.displayName}, you're` : "You're"} ready to begin your 75 Hard journey
+          {data.displayName ? `${data.displayName}, you're` : "You're"} ready to begin your Go the Nine journey
         </p>
       </div>
 

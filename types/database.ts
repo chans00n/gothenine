@@ -5,6 +5,7 @@ export interface Database {
         Row: {
           id: string
           display_name: string | null
+          avatar_url: string | null
           notification_preferences: {
             daily_reminder: boolean
             reminder_time: string
@@ -16,6 +17,7 @@ export interface Database {
         Insert: {
           id: string
           display_name?: string | null
+          avatar_url?: string | null
           notification_preferences?: {
             daily_reminder: boolean
             reminder_time: string
@@ -27,6 +29,7 @@ export interface Database {
         Update: {
           id?: string
           display_name?: string | null
+          avatar_url?: string | null
           notification_preferences?: {
             daily_reminder: boolean
             reminder_time: string

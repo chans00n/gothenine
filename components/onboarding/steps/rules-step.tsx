@@ -40,9 +40,9 @@ export function RulesStep({ onNext }: RulesStepProps) {
   return (
     <div className="space-y-6">
       <div className="text-center space-y-2">
-        <h2 className="text-3xl font-bold">The 75 Hard Rules</h2>
+        <h2 className="text-3xl font-bold">The Go the Nine Rules</h2>
         <p className="text-muted-foreground">
-          Complete all 5 tasks every day for 75 days straight
+          Complete all 6 tasks every day for 90 days straight
         </p>
       </div>
 

@@ -52,6 +52,9 @@ export function DesktopNav() {
       <Link href="/calendar" className="text-sm font-medium transition-colors hover:text-primary">
         Calendar
       </Link>
+      <Link href="/community" className="text-sm font-medium transition-colors hover:text-primary">
+        Community
+      </Link>
       <Link href="/progress" className="text-sm font-medium transition-colors hover:text-primary">
         Progress
       </Link>

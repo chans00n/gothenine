@@ -172,7 +172,7 @@ export default async function ProgressPage() {
                    </Badge>
                  </div>
                  <h1 className="text-2xl md:text-3xl font-bold">
-                   Your 75 Hard Journey
+                   Your Go the Nine Journey
                  </h1>
                  <p className="text-muted-foreground">
                    {formattedDate} • Track your progress and celebrate milestones
@@ -242,7 +242,7 @@ export default async function ProgressPage() {
                     Challenge Progress
                   </CardTitle>
                   <CardDescription>
-                    Your journey through the 75 Hard challenge
+                    Your journey through the Go the Nine challenge
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">

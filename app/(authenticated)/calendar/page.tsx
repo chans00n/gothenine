@@ -178,7 +178,7 @@ export default async function CalendarPage() {
                   <CalendarIcon className="w-5 h-5 text-primary" />
                 </div>
                 <h1 className="text-3xl font-bold tracking-tight">
-                  75 Hard Calendar
+                  Go the Nine Calendar
                 </h1>
                 <p className="text-muted-foreground">
                   Track your journey, {displayName}. See your progress and plan ahead.

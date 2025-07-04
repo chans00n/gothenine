@@ -13,7 +13,7 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
     <div className="space-y-8 text-center">
       <div>
         <h1 className="text-4xl font-bold tracking-tight mb-4">
-          Welcome to 75 Hard Tracker
+          Welcome to Go the Nine Tracker
         </h1>
         <p className="text-xl text-muted-foreground">
           Your journey to mental toughness starts here

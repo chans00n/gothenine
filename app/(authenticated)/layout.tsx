@@ -66,7 +66,7 @@ export default async function AuthenticatedLayout({
           </header>
           
           {/* Content area - scrollable */}
-          <main className="flex-1 overflow-hidden">
+          <main className="flex-1 overflow-hidden pb-16 md:pb-0">
             <OfflineBanner />
             <NotificationPermission />
             {children}

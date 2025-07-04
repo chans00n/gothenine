@@ -1,5 +1,4 @@
 import { createClient } from '@/lib/supabase/client'
-import imageCompression from 'browser-image-compression'
 import { toast } from '@/lib/toast'
 import { formatDateForDB } from '@/lib/utils/timezone'
 import { taskHelpers } from './task-completion'
@@ -279,6 +278,8 @@ export class PhotoUploadService {
     }
 
     try {
+      // Dynamically import imageCompression to avoid build issues
+      const { default: imageCompression } = await import('browser-image-compression')
       const compressedFile = await imageCompression(file, options)
       return new File([compressedFile], file.name, {
         type: compressedFile.type
@@ -297,6 +298,8 @@ export class PhotoUploadService {
     }
 
     try {
+      // Dynamically import imageCompression to avoid build issues
+      const { default: imageCompression } = await import('browser-image-compression')
       const thumbnail = await imageCompression(file, options)
       return new File([thumbnail], `thumb_${file.name}`, {
         type: thumbnail.type

@@ -1,8 +1,10 @@
 // Background Sync for Service Worker
 // Handles syncing data when the app regains connectivity
 
-// Listen for sync events
-self.addEventListener('sync', (event) => {
+// Check if we're in a service worker context
+if (typeof self !== 'undefined' && self.addEventListener) {
+  // Listen for sync events
+  self.addEventListener('sync', (event) => {
   console.log('Background sync event:', event.tag)
   
   if (event.tag === '75hard-sync') {
@@ -177,3 +179,5 @@ self.addEventListener('message', (event) => {
     })
   }
 })
+
+} // Close the service worker context check

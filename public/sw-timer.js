@@ -1,16 +1,18 @@
 // Service Worker Timer functionality
 // Handles background timer when the app is not in focus
 
-let timerState = {
-  startTime: null,
-  pausedTime: null,
-  isRunning: false,
-  isPaused: false,
-  seconds: 0
-};
+// Check if we're in a service worker context
+if (typeof self !== 'undefined' && self.addEventListener) {
+  let timerState = {
+    startTime: null,
+    pausedTime: null,
+    isRunning: false,
+    isPaused: false,
+    seconds: 0
+  };
 
-// Listen for messages from the main app
-self.addEventListener('message', (event) => {
+  // Listen for messages from the main app
+  self.addEventListener('message', (event) => {
   const { type, data } = event.data;
 
   switch (type) {
@@ -178,3 +180,5 @@ self.addEventListener('activate', (event) => {
   // Clear any existing timer intervals
   clearInterval(self.timerInterval);
 });
+
+} // Close the service worker context check

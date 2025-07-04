@@ -1,11 +1,13 @@
 // Notification handling for Service Worker
 // Manages scheduled notifications and push notifications
 
-// Store for scheduled notifications
-let scheduledNotifications = []
+// Check if we're in a service worker context
+if (typeof self !== 'undefined' && self.addEventListener) {
+  // Store for scheduled notifications
+  let scheduledNotifications = []
 
-// Listen for messages from the main thread
-self.addEventListener('message', async (event) => {
+  // Listen for messages from the main thread
+  self.addEventListener('message', async (event) => {
   const { type, data } = event.data || {}
 
   switch (type) {
@@ -275,3 +277,5 @@ self.addEventListener('activate', async (event) => {
     })()
   )
 })
+
+} // Close the service worker context check

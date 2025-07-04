@@ -1,0 +1,131 @@
+-- Create user_profiles table
+CREATE TABLE user_profiles (
+  id UUID REFERENCES auth.users(id) PRIMARY KEY,
+  display_name TEXT,
+  notification_preferences JSONB DEFAULT '{"daily_reminder": true, "reminder_time": "08:00", "motivational_messages": true}'::jsonb,
+  timezone TEXT DEFAULT 'America/New_York',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create challenges table
+CREATE TABLE challenges (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  description TEXT,
+  rules JSONB DEFAULT '{
+    "workout_1": {"duration": 45, "type": "indoor_outdoor"},
+    "workout_2": {"duration": 45, "type": "outdoor"},
+    "diet": {"type": "chosen_diet"},
+    "water": {"amount": 128, "unit": "oz"},
+    "reading": {"pages": 10, "type": "non_fiction"},
+    "progress_photo": {"required": true}
+  }'::jsonb,
+  start_date DATE,
+  end_date DATE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create daily_progress table
+CREATE TABLE daily_progress (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  challenge_id UUID REFERENCES challenges(id) ON DELETE CASCADE,
+  date DATE NOT NULL,
+  tasks_completed JSONB DEFAULT '{
+    "workout_1": false,
+    "workout_2": false,
+    "diet": false,
+    "water": false,
+    "reading": false,
+    "progress_photo": false
+  }'::jsonb,
+  notes TEXT,
+  photos TEXT[],
+  completed_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(user_id, challenge_id, date)
+);
+
+-- Create notification_logs table
+CREATE TABLE notification_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  type TEXT NOT NULL,
+  title TEXT,
+  body TEXT,
+  scheduled_for TIMESTAMP WITH TIME ZONE,
+  sent_at TIMESTAMP WITH TIME ZONE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Enable Row Level Security (RLS)
+ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE challenges ENABLE ROW LEVEL SECURITY;
+ALTER TABLE daily_progress ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notification_logs ENABLE ROW LEVEL SECURITY;
+
+-- Create policies for user_profiles
+CREATE POLICY "Users can view own profile" ON user_profiles
+  FOR SELECT USING (auth.uid() = id);
+
+CREATE POLICY "Users can update own profile" ON user_profiles
+  FOR UPDATE USING (auth.uid() = id);
+
+CREATE POLICY "Users can insert own profile" ON user_profiles
+  FOR INSERT WITH CHECK (auth.uid() = id);
+
+-- Create policies for challenges
+CREATE POLICY "Users can view own challenges" ON challenges
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own challenges" ON challenges
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own challenges" ON challenges
+  FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own challenges" ON challenges
+  FOR DELETE USING (auth.uid() = user_id);
+
+-- Create policies for daily_progress
+CREATE POLICY "Users can view own progress" ON daily_progress
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own progress" ON daily_progress
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own progress" ON daily_progress
+  FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own progress" ON daily_progress
+  FOR DELETE USING (auth.uid() = user_id);
+
+-- Create policies for notification_logs
+CREATE POLICY "Users can view own notifications" ON notification_logs
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own notifications" ON notification_logs
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+-- Create function to handle new user signup
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger AS $$
+BEGIN
+  INSERT INTO public.user_profiles (id, display_name)
+  VALUES (new.id, new.raw_user_meta_data->>'display_name');
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Create trigger for new user signup
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- Create indexes for better performance
+CREATE INDEX idx_challenges_user_id ON challenges(user_id);
+CREATE INDEX idx_daily_progress_user_challenge ON daily_progress(user_id, challenge_id);
+CREATE INDEX idx_daily_progress_date ON daily_progress(date);
+CREATE INDEX idx_notification_logs_user_id ON notification_logs(user_id);
+CREATE INDEX idx_notification_logs_scheduled ON notification_logs(scheduled_for);

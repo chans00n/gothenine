@@ -43,10 +43,11 @@ async function getCommunityData() {
       console.error('Error fetching progress:', progressError)
     }
 
-    // Transform and combine the data
-    const communityUsers = (users || []).map(profile => {
-      const activeChallenge = challenges?.find(c => c.user_id === profile.id && c.is_active)
-      const userProgress = todayProgress?.find(p => p.user_id === profile.id && p.challenge_id === activeChallenge?.id)
+    // Transform and combine the data - only show users with active challenges
+    const communityUsers = (users || [])
+      .map(profile => {
+        const activeChallenge = challenges?.find(c => c.user_id === profile.id && c.is_active)
+        const userProgress = todayProgress?.find(p => p.user_id === profile.id && p.challenge_id === activeChallenge?.id)
       
       // Calculate current day
       let currentDay = 0
@@ -72,7 +73,8 @@ async function getCommunityData() {
         tasksCompleted,
         totalTasks: 6, // 75 Hard has 6 daily tasks
         startedAt: activeChallenge?.start_date,
-        isCurrentUser: profile.id === user.id
+        isCurrentUser: profile.id === user.id,
+        hasActiveChallenge: !!activeChallenge
       }
     })
 

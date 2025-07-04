@@ -24,11 +24,32 @@ export default async function AuthenticatedLayout({
   }
 
   // Get user profile data
-  const { data: profile } = await supabase
+  let { data: profile, error: profileError } = await supabase
     .from('user_profiles')
     .select('display_name, avatar_url')
     .eq('id', user.id)
     .single()
+  
+  // If no profile exists, create one
+  if (profileError?.code === 'PGRST116' || !profile) {
+    const { data: newProfile } = await supabase
+      .from('user_profiles')
+      .insert({
+        id: user.id,
+        display_name: user.email?.split('@')[0] || 'User',
+        timezone: 'America/New_York',
+        notification_preferences: {
+          daily_reminder: true,
+          reminder_time: '09:00',
+          motivational_messages: true
+        },
+        created_at: new Date().toISOString()
+      })
+      .select('display_name, avatar_url')
+      .single()
+    
+    profile = newProfile
+  }
 
   return (
     <ChallengeProvider>

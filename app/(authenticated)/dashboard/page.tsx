@@ -258,9 +258,37 @@ export default async function DashboardPage() {
     
     if (!user) return
 
-    // Use the challenge ID and date from the page data (already calculated)
-    const activeChallengeId = challengeId
-    const currentDateStr = dateStr
+    // Get the current user's active challenge
+    const { data: activeChallenge } = await supabase
+      .from('challenges')
+      .select('id, start_date')
+      .eq('user_id', user.id)
+      .eq('is_active', true)
+      .single()
+      
+    if (!activeChallenge) {
+      throw new Error('No active challenge found')
+    }
+    
+    const activeChallengeId = activeChallenge.id
+    
+    // Get today's date in user's timezone
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('timezone')
+      .eq('id', user.id)
+      .single()
+      
+    const timezone = profile?.timezone || 'America/New_York'
+    const now = new Date()
+    const todayStr = now.toLocaleDateString('en-US', { 
+      timeZone: timezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    })
+    const [month, day, year] = todayStr.split('/')
+    const currentDateStr = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
 
     console.log('Task toggle:', { taskDefinitionId, completed, challengeId: activeChallengeId, currentDateStr })
 

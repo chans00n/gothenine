@@ -1,14 +1,32 @@
 import { type NextRequest, NextResponse } from 'next/server'
-import { updateSession } from '@/lib/supabase/middleware'
 
 export async function middleware(request: NextRequest) {
-  try {
-    return await updateSession(request)
-  } catch (error) {
-    console.error('Middleware error:', error)
-    // If middleware fails, just continue with the request
-    return NextResponse.next()
-  }
+  // Temporarily simplified middleware to debug the issue
+  const pathname = request.nextUrl.pathname
+  
+  // Only protect authenticated routes
+  const protectedPaths = [
+    '/dashboard',
+    '/checklist',
+    '/calendar',
+    '/progress',
+    '/photos',
+    '/notes',
+    '/timer',
+    '/walk',
+    '/water',
+    '/settings',
+    '/achievements',
+    '/notifications',
+    '/guide',
+    '/help'
+  ]
+  
+  const isProtectedPath = protectedPaths.some(path => pathname.startsWith(path))
+  
+  // For now, just pass through all requests
+  // This will help us determine if the Supabase client is causing the issue
+  return NextResponse.next()
 }
 
 export const config = {
@@ -21,7 +39,6 @@ export const config = {
      * - images - .svg, .png, .jpg, .jpeg, .gif, .webp
      * - public folder
      * - api routes
-     * Feel free to modify this pattern to include more paths.
      */
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$|api|public).*)',
   ],

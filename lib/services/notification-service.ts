@@ -66,7 +66,13 @@ class NotificationService {
   // Get current permission status
   getPermissionStatus(): NotificationPermission {
     if (!this.isSupported) return 'denied'
-    return Notification.permission
+    if (typeof window === 'undefined' || !('Notification' in window)) return 'denied'
+    try {
+      return Notification.permission
+    } catch (error) {
+      console.warn('Error accessing Notification.permission:', error)
+      return 'denied'
+    }
   }
 
   // Request notification permission
@@ -74,15 +80,24 @@ class NotificationService {
     if (!this.isSupported) {
       throw new Error('Notifications are not supported')
     }
-
-    const permission = await Notification.requestPermission()
     
-    // If permission granted, subscribe to push notifications
-    if (permission === 'granted' && this.registration) {
-      await this.subscribeToPush()
+    if (typeof window === 'undefined' || !('Notification' in window)) {
+      throw new Error('Notifications are not available')
     }
 
-    return permission
+    try {
+      const permission = await Notification.requestPermission()
+      
+      // If permission granted, subscribe to push notifications
+      if (permission === 'granted' && this.registration) {
+        await this.subscribeToPush()
+      }
+
+      return permission
+    } catch (error) {
+      console.error('Error requesting notification permission:', error)
+      return 'denied'
+    }
   }
 
   // Subscribe to push notifications

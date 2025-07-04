@@ -37,7 +37,7 @@ export function NotificationPermission({
     const dismissed = localStorage.getItem('75hard-notification-dismissed')
     if (dismissed === 'true') {
       setIsDismissed(true)
-    } else if (Notification.permission === 'default') {
+    } else if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
       // Show banner with a slight delay for better UX
       setTimeout(() => setIsVisible(true), 500)
     }

@@ -3,9 +3,20 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { statisticsService } from '@/lib/services/statistics-client'
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, lazy, Suspense } from 'react'
 import { Skeleton } from '@/components/ui/skeleton'
+
+// Dynamically import recharts to avoid SSR issues
+const LineChart = lazy(() => import('recharts').then(module => ({ default: module.LineChart })))
+const Line = lazy(() => import('recharts').then(module => ({ default: module.Line })))
+const BarChart = lazy(() => import('recharts').then(module => ({ default: module.BarChart })))
+const Bar = lazy(() => import('recharts').then(module => ({ default: module.Bar })))
+const XAxis = lazy(() => import('recharts').then(module => ({ default: module.XAxis })))
+const YAxis = lazy(() => import('recharts').then(module => ({ default: module.YAxis })))
+const CartesianGrid = lazy(() => import('recharts').then(module => ({ default: module.CartesianGrid })))
+const Tooltip = lazy(() => import('recharts').then(module => ({ default: module.Tooltip })))
+const ResponsiveContainer = lazy(() => import('recharts').then(module => ({ default: module.ResponsiveContainer })))
+const Legend = lazy(() => import('recharts').then(module => ({ default: module.Legend })))
 
 interface ProgressChartsProps {
   challengeId: string
@@ -68,68 +79,72 @@ export function ProgressCharts({ challengeId, timezone }: ProgressChartsProps) {
           
           <TabsContent value="completion" className="mt-4">
             <div className="h-[300px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={trends}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis 
-                    dataKey="date" 
-                    className="text-xs"
-                    tick={{ fill: 'currentColor' }}
-                  />
-                  <YAxis 
-                    className="text-xs"
-                    tick={{ fill: 'currentColor' }}
-                    domain={[0, 100]}
-                  />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'hsl(var(--background))',
-                      border: '1px solid hsl(var(--border))'
-                    }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="completion" 
-                    stroke="hsl(var(--primary))"
-                    strokeWidth={2}
-                    dot={{ fill: 'hsl(var(--primary))', r: 4 }}
-                    activeDot={{ r: 6 }}
-                    name="Completion %"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+              <Suspense fallback={<Skeleton className="h-full w-full" />}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={trends}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis 
+                      dataKey="date" 
+                      className="text-xs"
+                      tick={{ fill: 'currentColor' }}
+                    />
+                    <YAxis 
+                      className="text-xs"
+                      tick={{ fill: 'currentColor' }}
+                      domain={[0, 100]}
+                    />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'hsl(var(--background))',
+                        border: '1px solid hsl(var(--border))'
+                      }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="completion" 
+                      stroke="hsl(var(--primary))"
+                      strokeWidth={2}
+                      dot={{ fill: 'hsl(var(--primary))', r: 4 }}
+                      activeDot={{ r: 6 }}
+                      name="Completion %"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </Suspense>
             </div>
           </TabsContent>
           
           <TabsContent value="tasks" className="mt-4">
             <div className="h-[300px] w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={trends}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis 
-                    dataKey="date" 
-                    className="text-xs"
-                    tick={{ fill: 'currentColor' }}
-                  />
-                  <YAxis 
-                    className="text-xs"
-                    tick={{ fill: 'currentColor' }}
-                    domain={[0, 6]}
-                  />
-                  <Tooltip 
-                    contentStyle={{ 
-                      backgroundColor: 'hsl(var(--background))',
-                      border: '1px solid hsl(var(--border))'
-                    }}
-                  />
-                  <Bar 
-                    dataKey="tasks" 
-                    fill="hsl(var(--primary))"
-                    radius={[4, 4, 0, 0]}
-                    name="Tasks"
-                  />
-                </BarChart>
-              </ResponsiveContainer>
+              <Suspense fallback={<Skeleton className="h-full w-full" />}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={trends}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis 
+                      dataKey="date" 
+                      className="text-xs"
+                      tick={{ fill: 'currentColor' }}
+                    />
+                    <YAxis 
+                      className="text-xs"
+                      tick={{ fill: 'currentColor' }}
+                      domain={[0, 6]}
+                    />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'hsl(var(--background))',
+                        border: '1px solid hsl(var(--border))'
+                      }}
+                    />
+                    <Bar 
+                      dataKey="tasks" 
+                      fill="hsl(var(--primary))"
+                      radius={[4, 4, 0, 0]}
+                      name="Tasks"
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </Suspense>
             </div>
           </TabsContent>
         </Tabs>

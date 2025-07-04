@@ -4,12 +4,6 @@ const withPWA = require('next-pwa')({
   skipWaiting: true,
   disable: process.env.NODE_ENV === 'development',
   buildExcludes: [/middleware-manifest.json$/],
-  // Temporarily remove importScripts to test if this is causing the issue
-  // importScripts: [
-  //   '/sw-background-sync.js',
-  //   '/sw-timer.js',
-  //   '/sw-notifications.js'
-  // ],
   runtimeCaching: [
     {
       urlPattern: /^https?.*/,
@@ -81,6 +75,25 @@ const nextConfig = {
   
   // Bundle optimization
   webpack: (config, { isServer }) => {
+    // Fix browser-specific library SSR issues
+    if (isServer) {
+      config.externals = config.externals || []
+      config.externals.push('framer-motion')
+      config.externals.push('@tiptap/react')
+      config.externals.push('@tiptap/starter-kit') 
+      config.externals.push('@tiptap/extension-placeholder')
+      config.externals.push('embla-carousel-react')
+    }
+    
+    // Add global polyfill for self
+    config.plugins = config.plugins || []
+    const webpack = require('webpack')
+    config.plugins.push(
+      new webpack.DefinePlugin({
+        'typeof self': JSON.stringify('undefined'),
+      })
+    )
+    
     // Optimize bundle size
     if (!isServer) {
       config.resolve.fallback = {

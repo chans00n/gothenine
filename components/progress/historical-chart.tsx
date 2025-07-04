@@ -3,8 +3,22 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { LineChart, Line, BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
-import { useState } from 'react'
+import { useState, lazy, Suspense } from 'react'
+import { Skeleton } from '@/components/ui/skeleton'
+
+// Dynamically import recharts to avoid SSR issues
+const LineChart = lazy(() => import('recharts').then(module => ({ default: module.LineChart })))
+const Line = lazy(() => import('recharts').then(module => ({ default: module.Line })))
+const BarChart = lazy(() => import('recharts').then(module => ({ default: module.BarChart })))
+const Bar = lazy(() => import('recharts').then(module => ({ default: module.Bar })))
+const AreaChart = lazy(() => import('recharts').then(module => ({ default: module.AreaChart })))
+const Area = lazy(() => import('recharts').then(module => ({ default: module.Area })))
+const XAxis = lazy(() => import('recharts').then(module => ({ default: module.XAxis })))
+const YAxis = lazy(() => import('recharts').then(module => ({ default: module.YAxis })))
+const CartesianGrid = lazy(() => import('recharts').then(module => ({ default: module.CartesianGrid })))
+const Tooltip = lazy(() => import('recharts').then(module => ({ default: module.Tooltip })))
+const ResponsiveContainer = lazy(() => import('recharts').then(module => ({ default: module.ResponsiveContainer })))
+const Legend = lazy(() => import('recharts').then(module => ({ default: module.Legend })))
 
 interface HistoricalChartProps {
   data: {
@@ -197,9 +211,11 @@ export function HistoricalChart({ data }: HistoricalChartProps) {
       </CardHeader>
       <CardContent>
         <div className="h-[400px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            {renderChart()}
-          </ResponsiveContainer>
+          <Suspense fallback={<Skeleton className="h-full w-full" />}>
+            <ResponsiveContainer width="100%" height="100%">
+              {renderChart()}
+            </ResponsiveContainer>
+          </Suspense>
         </div>
       </CardContent>
     </Card>

@@ -15,8 +15,16 @@ import {
 import { toast } from 'sonner'
 import { AchievementBadge, type BadgeType } from '@/components/ui/achievement-badge'
 import { ChartConfig, ChartContainer } from '@/components/ui/chart'
-import { RadialBarChart, RadialBar, PolarGrid, PolarRadiusAxis, Label } from 'recharts'
 import { Calendar, Trophy, TrendingUp } from 'lucide-react'
+import { lazy, Suspense } from 'react'
+import { Skeleton } from '@/components/ui/skeleton'
+
+// Dynamically import recharts to avoid SSR issues
+const RadialBarChart = lazy(() => import('recharts').then(module => ({ default: module.RadialBarChart })))
+const RadialBar = lazy(() => import('recharts').then(module => ({ default: module.RadialBar })))
+const PolarGrid = lazy(() => import('recharts').then(module => ({ default: module.PolarGrid })))
+const PolarRadiusAxis = lazy(() => import('recharts').then(module => ({ default: module.PolarRadiusAxis })))
+const Label = lazy(() => import('recharts').then(module => ({ default: module.Label })))
 
 interface ProgressShareProps {
   stats: {
@@ -179,39 +187,40 @@ export function ProgressShare({ stats, userName = "User" }: ProgressShareProps) 
 
           <div className="flex justify-center relative z-10">
             <div className="w-[200px] h-[200px]">
-              <ChartContainer
-                config={{
-                  value: {
-                    label: 'Progress',
-                    color: 'var(--chart-1)'
-                  }
-                } satisfies ChartConfig}
-                className="w-full h-full"
-              >
-                <RadialBarChart
-                  data={[{
-                    value: stats.completionRate,
-                    fill: 'var(--chart-1)'
-                  }]}
-                  startAngle={90}
-                  endAngle={450}
-                  innerRadius={70}
-                  outerRadius={90}
+              <Suspense fallback={<Skeleton className="h-full w-full rounded-full" />}>
+                <ChartContainer
+                  config={{
+                    value: {
+                      label: 'Progress',
+                      color: 'var(--chart-1)'
+                    }
+                  } satisfies ChartConfig}
+                  className="w-full h-full"
                 >
-                  <PolarGrid
-                    gridType="circle"
-                    radialLines={false}
-                    stroke="none"
-                    className="first:fill-muted last:fill-background"
-                    polarRadius={[76, 64]}
-                  />
-                  <RadialBar 
-                    dataKey="value" 
-                    background
-                    cornerRadius={10}
-                    fill="var(--chart-1)"
-                    maxBarSize={10}
-                  />
+                  <RadialBarChart
+                    data={[{
+                      value: stats.completionRate,
+                      fill: 'var(--chart-1)'
+                    }]}
+                    startAngle={90}
+                    endAngle={450}
+                    innerRadius={70}
+                    outerRadius={90}
+                  >
+                    <PolarGrid
+                      gridType="circle"
+                      radialLines={false}
+                      stroke="none"
+                      className="first:fill-muted last:fill-background"
+                      polarRadius={[76, 64]}
+                    />
+                    <RadialBar 
+                      dataKey="value" 
+                      background
+                      cornerRadius={10}
+                      fill="var(--chart-1)"
+                      maxBarSize={10}
+                    />
                   <PolarRadiusAxis tick={false} tickLine={false} axisLine={false}>
                     <Label
                       content={({ viewBox }) => {
@@ -243,8 +252,9 @@ export function ProgressShare({ stats, userName = "User" }: ProgressShareProps) 
                       }}
                     />
                   </PolarRadiusAxis>
-                </RadialBarChart>
-              </ChartContainer>
+                  </RadialBarChart>
+                </ChartContainer>
+              </Suspense>
             </div>
           </div>
 

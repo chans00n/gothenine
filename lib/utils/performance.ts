@@ -141,14 +141,19 @@ export class PerformanceMonitor {
   }
 }
 
-// Export singleton instance
-export const performanceMonitor = PerformanceMonitor.getInstance()
+// Export lazy singleton getter to avoid SSR issues
+export const getPerformanceMonitor = () => {
+  if (typeof window === 'undefined') {
+    throw new Error('PerformanceMonitor can only be used in the browser')
+  }
+  return PerformanceMonitor.getInstance()
+}
 
 // React hook for performance monitoring
 export function usePerformanceMonitor() {
-  const mark = (name: string) => performanceMonitor.mark(name)
-  const measure = (name: string) => performanceMonitor.measure(name)
-  const getMetrics = () => performanceMonitor.getMetrics()
+  const mark = (name: string) => getPerformanceMonitor().mark(name)
+  const measure = (name: string) => getPerformanceMonitor().measure(name)
+  const getMetrics = () => getPerformanceMonitor().getMetrics()
   
   return { mark, measure, getMetrics }
 }

@@ -1,13 +1,14 @@
 "use client"
 
 import { useEffect } from 'react'
-import { performanceMonitor, analyzeBundleSize } from '@/lib/utils/performance'
+import { getPerformanceMonitor, analyzeBundleSize } from '@/lib/utils/performance'
 
 export function PerformanceMonitor() {
   useEffect(() => {
     // Initialize performance monitoring
-    performanceMonitor.getCoreWebVitals()
-    performanceMonitor.monitorResources()
+    const perfMonitor = getPerformanceMonitor()
+    perfMonitor.getCoreWebVitals()
+    perfMonitor.monitorResources()
     
     // Analyze bundle size in development
     if (process.env.NODE_ENV === 'development') {
@@ -18,11 +19,11 @@ export function PerformanceMonitor() {
 
     // Monitor route changes
     const handleRouteStart = () => {
-      performanceMonitor.mark('route-change')
+      getPerformanceMonitor().mark('route-change')
     }
 
     const handleRouteComplete = () => {
-      const duration = performanceMonitor.measure('route-change')
+      const duration = getPerformanceMonitor().measure('route-change')
       if (duration && duration > 1000) {
         console.warn(`Slow route change: ${duration}ms`)
       }
@@ -36,9 +37,9 @@ export function PerformanceMonitor() {
       // Performance logging on visibility change (useful for PWA)
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') {
-          performanceMonitor.mark('app-visible')
+          getPerformanceMonitor().mark('app-visible')
         } else {
-          const duration = performanceMonitor.measure('app-visible')
+          const duration = getPerformanceMonitor().measure('app-visible')
           if (duration) {
             console.log(`App was visible for: ${duration}ms`)
           }
@@ -64,10 +65,10 @@ export function PerformanceDebugPanel() {
     if (process.env.NODE_ENV === 'development') {
       // Add performance debug info to window for console access
       ;(window as any).__75hardPerf__ = {
-        getMetrics: () => performanceMonitor.getMetrics(),
-        clearMetrics: () => performanceMonitor.clear(),
-        mark: (name: string) => performanceMonitor.mark(name),
-        measure: (name: string) => performanceMonitor.measure(name),
+        getMetrics: () => getPerformanceMonitor().getMetrics(),
+        clearMetrics: () => getPerformanceMonitor().clear(),
+        mark: (name: string) => getPerformanceMonitor().mark(name),
+        measure: (name: string) => getPerformanceMonitor().measure(name),
       }
 
       console.log('🔍 Performance debugging available at window.__75hardPerf__')

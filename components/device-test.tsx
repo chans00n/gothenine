@@ -1,13 +1,14 @@
 "use client"
 
 import { useEffect } from 'react'
-import { deviceTester } from '@/lib/utils/device-testing'
+import { getDeviceTester } from '@/lib/utils/device-testing'
 
 export function DeviceTest() {
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
       // Run device compatibility tests
       setTimeout(() => {
+        const deviceTester = getDeviceTester()
         deviceTester.logTestReport()
         
         const issues = deviceTester.checkCommonIssues()
@@ -26,11 +27,11 @@ export function DeviceTest() {
 
       // Add global device testing utilities
       ;(window as any).__75hardDevice__ = {
-        getInfo: () => deviceTester.getDeviceInfo(),
-        testPWA: () => deviceTester.testPWAFeatures(),
-        testBreakpoints: () => deviceTester.testBreakpoints(),
-        generateReport: () => deviceTester.generateTestReport(),
-        checkIssues: () => deviceTester.checkCommonIssues(),
+        getInfo: () => getDeviceTester().getDeviceInfo(),
+        testPWA: () => getDeviceTester().testPWAFeatures(),
+        testBreakpoints: () => getDeviceTester().testBreakpoints(),
+        generateReport: () => getDeviceTester().generateTestReport(),
+        checkIssues: () => getDeviceTester().checkCommonIssues(),
       }
 
       console.log('📱 Device testing available at window.__75hardDevice__')

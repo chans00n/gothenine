@@ -259,15 +259,20 @@ export class DeviceTester {
   }
 }
 
-// Export singleton instance
-export const deviceTester = DeviceTester.getInstance()
+// Export lazy singleton getter to avoid SSR issues
+export const getDeviceTester = () => {
+  if (typeof window === 'undefined') {
+    throw new Error('DeviceTester can only be used in the browser')
+  }
+  return DeviceTester.getInstance()
+}
 
 // React hook for device testing
 export function useDeviceTesting() {
-  const getDeviceInfo = () => deviceTester.getDeviceInfo()
-  const testPWAFeatures = () => deviceTester.testPWAFeatures()
-  const generateReport = () => deviceTester.generateTestReport()
-  const checkIssues = () => deviceTester.checkCommonIssues()
+  const getDeviceInfo = () => getDeviceTester().getDeviceInfo()
+  const testPWAFeatures = () => getDeviceTester().testPWAFeatures()
+  const generateReport = () => getDeviceTester().generateTestReport()
+  const checkIssues = () => getDeviceTester().checkCommonIssues()
 
   return {
     getDeviceInfo,

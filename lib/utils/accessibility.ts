@@ -347,8 +347,13 @@ export class AccessibilityAuditor {
   }
 }
 
-// Export singleton instance
-export const accessibilityAuditor = AccessibilityAuditor.getInstance()
+// Export lazy singleton getter to avoid SSR issues
+export const getAccessibilityAuditor = () => {
+  if (typeof window === 'undefined') {
+    throw new Error('AccessibilityAuditor can only be used in the browser')
+  }
+  return AccessibilityAuditor.getInstance()
+}
 
 // Keyboard navigation utilities
 export const KeyboardNavigation = {

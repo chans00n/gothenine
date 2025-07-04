@@ -42,7 +42,7 @@ export default function LoginPage() {
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
           <CardDescription>
-            Enter your credentials to access your 75 Hard journey
+            Enter your credentials to access your Go the Nine journey
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleLogin}>

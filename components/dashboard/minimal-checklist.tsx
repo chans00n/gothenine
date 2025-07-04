@@ -10,7 +10,7 @@ import Link from 'next/link'
 
 interface MinimalChecklistProps {
   tasks: DailyTask[]
-  onTaskToggle: (taskDefinitionId: string, completed: boolean) => void
+  onTaskToggle: (taskDefinitionId: string, completed: boolean) => void | Promise<void>
 }
 
 const taskIcons: Record<string, string> = {
@@ -31,9 +31,16 @@ const taskToolMapping: Record<string, { href: string; label: string }> = {
 
 export function MinimalChecklist({ tasks, onTaskToggle }: MinimalChecklistProps) {
   const [optimisticTasks, setOptimisticTasks] = useState<Record<string, boolean>>({})
+  const [pendingTasks, setPendingTasks] = useState<Set<string>>(new Set())
 
-  const handleToggle = (taskId: string, taskDefinitionId: string, currentCompleted: boolean) => {
+  const handleToggle = async (taskId: string, taskDefinitionId: string, currentCompleted: boolean) => {
+    // Prevent multiple clicks on the same task
+    if (pendingTasks.has(taskId)) return
+    
     const newCompleted = !currentCompleted
+    
+    // Mark task as pending
+    setPendingTasks(prev => new Set(prev).add(taskId))
     
     // Optimistic update
     setOptimisticTasks(prev => ({ ...prev, [taskId]: newCompleted }))
@@ -45,8 +52,37 @@ export function MinimalChecklist({ tasks, onTaskToggle }: MinimalChecklistProps)
       }))
     }
     
-    // Server update - use task definition ID for persistence
-    onTaskToggle(taskDefinitionId, newCompleted)
+    try {
+      // Server update - use task definition ID for persistence
+      await onTaskToggle(taskDefinitionId, newCompleted)
+      
+      // Clear optimistic state for this task after successful update
+      // This ensures the server state takes precedence
+      setTimeout(() => {
+        setOptimisticTasks(prev => {
+          const newState = { ...prev }
+          delete newState[taskId]
+          return newState
+        })
+        setPendingTasks(prev => {
+          const newSet = new Set(prev)
+          newSet.delete(taskId)
+          return newSet
+        })
+      }, 100)
+    } catch (error) {
+      // Revert optimistic update on error
+      setOptimisticTasks(prev => {
+        const newState = { ...prev }
+        delete newState[taskId]
+        return newState
+      })
+      setPendingTasks(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(taskId)
+        return newSet
+      })
+    }
   }
 
   const sortedTasks = [...tasks].sort((a, b) => {
@@ -79,14 +115,15 @@ export function MinimalChecklist({ tasks, onTaskToggle }: MinimalChecklistProps)
                 layout: { type: "spring", stiffness: 400, damping: 30 }
               }}
               className={cn(
-                "group relative flex items-center gap-4 p-4 rounded-xl border transition-all duration-300 cursor-pointer",
-                "hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-0.5",
-                "active:scale-[0.98] active:transition-transform active:duration-100",
+                "group relative flex items-center gap-4 p-4 rounded-xl border transition-all duration-300",
+                pendingTasks.has(task.id) 
+                  ? "cursor-wait opacity-70" 
+                  : "cursor-pointer hover:shadow-lg hover:shadow-primary/5 hover:-translate-y-0.5 active:scale-[0.98] active:transition-transform active:duration-100",
                 isCompleted 
                   ? "bg-primary/5 border-primary/20 shadow-sm" 
                   : "bg-background border-border hover:border-primary/30 hover:bg-primary/5"
               )}
-              onClick={() => handleToggle(task.id, task.taskDefinitionId, task.completed)}
+              onClick={() => !pendingTasks.has(task.id) && handleToggle(task.id, task.taskDefinitionId, task.completed)}
             >
               {/* Completion indicator line */}
               <div className={cn(

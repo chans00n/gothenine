@@ -38,8 +38,8 @@ export default async function AuthenticatedLayout({
         
         {/* Main content with padding for desktop nav */}
         <div className="flex flex-col flex-1 md:pl-16">
-          {/* Minimal header bar */}
-          <header className="flex-shrink-0 bg-background/80 backdrop-blur-sm border-b">
+          {/* Minimal header bar with safe area padding */}
+          <header className="flex-shrink-0 bg-background/80 backdrop-blur-sm border-b pt-safe">
             <div className="flex items-center justify-between px-4 h-14">
               <div className="flex items-center gap-3">
                 <Link href="/dashboard" className="flex items-center hover:opacity-80 transition-opacity">

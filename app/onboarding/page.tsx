@@ -71,28 +71,47 @@ export default function OnboardingPage() {
         }
       }
 
-      // Set up notifications if enabled
+      // Set up notifications if enabled (don't block on this)
       if (data.notificationsEnabled) {
-        const notificationService = getNotificationService()
-        if (notificationService.getPermissionStatus() === 'granted') {
-          const preferences = notificationService.getDefaultPreferences()
-        preferences.enabled = true
-        preferences.dailyReminderTime = data.notificationPreferences.dailyReminderTime
-        preferences.workoutReminderTimes = data.notificationPreferences.workoutReminderTimes
-        preferences.waterReminderInterval = data.notificationPreferences.waterReminderInterval
-        preferences.readingReminderTime = data.notificationPreferences.readingReminderTime
-        preferences.photoReminderTime = data.notificationPreferences.photoReminderTime
+        try {
+          const notificationService = getNotificationService()
+          if (notificationService.getPermissionStatus() === 'granted') {
+            const preferences = notificationService.getDefaultPreferences()
+            preferences.enabled = true
+            preferences.dailyReminderTime = data.notificationPreferences.dailyReminderTime
+            preferences.workoutReminderTimes = data.notificationPreferences.workoutReminderTimes
+            preferences.waterReminderInterval = data.notificationPreferences.waterReminderInterval
+            preferences.readingReminderTime = data.notificationPreferences.readingReminderTime
+            preferences.photoReminderTime = data.notificationPreferences.photoReminderTime
 
-          localStorage.setItem('75hard-notification-preferences', JSON.stringify(preferences))
-          await notificationService.scheduleNotifications(preferences, data.timezone)
+            localStorage.setItem('75hard-notification-preferences', JSON.stringify(preferences))
+            
+            // Don't await this - let it run in background
+            notificationService.scheduleNotifications(preferences, data.timezone).catch(console.error)
+          }
+        } catch (notifError) {
+          console.error('Notification setup error:', notifError)
+          // Don't fail onboarding due to notification issues
         }
       }
 
-      // Create welcome notification
-      await createWelcomeNotification()
+      // Create welcome notification (don't block on this)
+      try {
+        createWelcomeNotification().catch(console.error)
+      } catch (error) {
+        console.error('Welcome notification error:', error)
+      }
 
       toast.success('Welcome to 75 Hard! Your journey begins now.')
-      router.push('/dashboard')
+      
+      // Force a hard navigation to ensure proper redirect
+      await router.push('/dashboard')
+      router.refresh()
+      
+      // Fallback redirect after a short delay
+      setTimeout(() => {
+        window.location.href = '/dashboard'
+      }, 1000)
     } catch (error) {
       console.error('Onboarding error:', error)
       const errorMessage = error instanceof Error ? error.message : 'Failed to complete setup'

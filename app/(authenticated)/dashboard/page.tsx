@@ -4,7 +4,7 @@ import { DashboardHeader } from '@/components/dashboard/dashboard-header'
 import { QuickActions } from '@/components/dashboard/quick-actions'
 import { taskDefinitions, createDailyTasks } from '@/lib/task-definitions'
 import { generate75DayCalendar, getCurrentDayNumber } from '@/lib/calendar-utils'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { Suspense } from 'react'
 import { DailyChecklistSkeleton } from '@/components/checklist/daily-checklist'
@@ -98,6 +98,7 @@ function DashboardSkeleton() {
 }
 
 async function getMinimalDashboardData() {
+  // Ensure fresh data on every request
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -161,7 +162,7 @@ async function getMinimalDashboardData() {
     .select('*')
     .eq('challenge_id', challengeId)
     .eq('date', dateStr)
-    .single()
+    .maybeSingle() // Use maybeSingle to avoid errors when no record exists
 
   // Fetch all progress for calendar and stats
   const { data: allProgress } = await supabase
@@ -226,6 +227,9 @@ async function getMinimalDashboardData() {
     timezone
   }
 }
+
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 export default async function DashboardPage() {
   const data = await getMinimalDashboardData()
@@ -307,6 +311,9 @@ export default async function DashboardPage() {
       } else {
         console.log('Progress updated successfully')
         revalidatePath('/dashboard')
+        revalidatePath('/checklist')
+        revalidatePath('/calendar')
+        revalidateTag('daily-progress')
       }
     } else {
       const { error } = await supabase
@@ -325,6 +332,9 @@ export default async function DashboardPage() {
       } else {
         console.log('Progress inserted successfully')
         revalidatePath('/dashboard')
+        revalidatePath('/checklist')
+        revalidatePath('/calendar')
+        revalidateTag('daily-progress')
       }
     }
   }

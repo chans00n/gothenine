@@ -31,6 +31,9 @@ if (typeof window === 'undefined') {
           removeChild: () => {},
           setAttribute: () => {},
           style: {},
+          addEventListener: () => {},
+          removeEventListener: () => {},
+          getElementsByTagName: () => [],
         }),
         createTextNode: () => ({}),
         querySelector: () => null,
@@ -38,13 +41,30 @@ if (typeof window === 'undefined') {
         getElementsByTagName: () => [],
         getElementById: () => null,
         getElementsByClassName: () => [],
+        addEventListener: () => {},
+        removeEventListener: () => {},
         body: {
           appendChild: () => {},
           removeChild: () => {},
+          style: {},
+          classList: {
+            add: () => {},
+            remove: () => {},
+            contains: () => false,
+          },
         },
         head: {
           appendChild: () => {},
           removeChild: () => {},
+          getElementsByTagName: () => [],
+        },
+        documentElement: {
+          style: {},
+          classList: {
+            add: () => {},
+            remove: () => {},
+            contains: () => false,
+          },
         },
       },
     }

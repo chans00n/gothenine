@@ -19,12 +19,18 @@ if (typeof window === 'undefined') {
     globalObj.self = globalObj
   }
   
+  // Polyfill webpackChunk for SSR
+  if (typeof globalObj.webpackChunk_N_E === 'undefined') {
+    globalObj.webpackChunk_N_E = []
+  }
+  
   // Polyfill minimal window object for libraries that check for its existence
   if (typeof globalObj.window === 'undefined') {
     globalObj.window = {
       // Add minimal properties that libraries might check
       location: { href: '', protocol: 'https:', host: 'localhost' },
       navigator: { userAgent: 'node' },
+      webpackChunk_N_E: globalObj.webpackChunk_N_E || [],
       document: {
         createElement: () => ({
           appendChild: () => {},

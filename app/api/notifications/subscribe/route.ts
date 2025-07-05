@@ -3,18 +3,29 @@ import { NextResponse } from 'next/server'
 
 export async function POST(request: Request) {
   try {
+    console.log('Push subscription request received')
+    
     const supabase = await createClient()
     
     // Get the current user
     const { data: { user }, error: userError } = await supabase.auth.getUser()
     if (userError || !user) {
+      console.error('User auth error:', userError)
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    
+    console.log('User authenticated:', user.id)
 
     // Get the subscription from the request body
     const subscription = await request.json()
+    console.log('Subscription data received:', {
+      endpoint: subscription.endpoint?.substring(0, 50) + '...',
+      hasP256dh: !!subscription.keys?.p256dh,
+      hasAuth: !!subscription.keys?.auth
+    })
     
     if (!subscription.endpoint || !subscription.keys?.p256dh || !subscription.keys?.auth) {
+      console.error('Invalid subscription data:', subscription)
       return NextResponse.json({ error: 'Invalid subscription data' }, { status: 400 })
     }
 
@@ -22,6 +33,7 @@ export async function POST(request: Request) {
     const userAgent = request.headers.get('user-agent') || ''
 
     // Store the subscription in the database
+    console.log('Saving subscription to database...')
     const { data, error } = await supabase
       .from('push_subscriptions')
       .upsert({
@@ -29,7 +41,8 @@ export async function POST(request: Request) {
         endpoint: subscription.endpoint,
         p256dh: subscription.keys.p256dh,
         auth: subscription.keys.auth,
-        user_agent: userAgent
+        user_agent: userAgent,
+        updated_at: new Date().toISOString()
       }, {
         onConflict: 'user_id,endpoint'
       })
@@ -37,18 +50,26 @@ export async function POST(request: Request) {
       .single()
 
     if (error) {
-      console.error('Failed to save subscription:', error)
-      return NextResponse.json({ error: 'Failed to save subscription' }, { status: 500 })
+      console.error('Database error saving subscription:', error)
+      return NextResponse.json({ 
+        error: 'Failed to save subscription',
+        details: error.message 
+      }, { status: 500 })
     }
 
+    console.log('Subscription saved successfully:', data?.id)
+    
     return NextResponse.json({ 
       success: true,
       message: 'Push notification subscription saved successfully',
-      subscriptionId: data.id
+      subscriptionId: data?.id
     })
   } catch (error) {
-    console.error('Subscribe error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error('Subscribe endpoint error:', error)
+    return NextResponse.json({ 
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 })
   }
 }
 

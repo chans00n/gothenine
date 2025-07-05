@@ -10,7 +10,6 @@ import { taskDefinitions } from '@/lib/task-definitions'
 import { createClient } from '@/lib/supabase/client'
 import { parseDateString } from '@/lib/utils/timezone'
 import { 
-  CheckCircle2, 
   Circle,
   CircleCheck,
   ChevronLeft,
@@ -64,7 +63,7 @@ export function EditableDayModal({
   onClose, 
   day, 
   challengeId,
-  timezone,
+  timezone: _timezone,
   onNavigate,
   onUpdate 
 }: EditableDayModalProps) {
@@ -96,14 +95,15 @@ export function EditableDayModal({
         dateStr = `${year}-${month}-${dayNum}`
       } else if (typeof day.date === 'string') {
         // If it's already a string, ensure it's in YYYY-MM-DD format
-        if (day.date.includes('T')) {
-          const parsed = parseDateString(day.date)
+        const dateString = day.date as string
+        if (dateString.includes('T')) {
+          const parsed = parseDateString(dateString)
           const year = parsed.getFullYear()
           const month = String(parsed.getMonth() + 1).padStart(2, '0')
           const dayNum = String(parsed.getDate()).padStart(2, '0')
           dateStr = `${year}-${month}-${dayNum}`
         } else {
-          dateStr = day.date.split('T')[0]
+          dateStr = dateString.split('T')[0]
         }
       } else {
         dateStr = String(day.date)
@@ -180,14 +180,15 @@ export function EditableDayModal({
         dateStr = `${year}-${month}-${dayNum}`
       } else if (typeof day.date === 'string') {
         // If it's already a string, ensure it's in YYYY-MM-DD format
-        if (day.date.includes('T')) {
-          const parsed = parseDateString(day.date)
+        const dateString = day.date as string
+        if (dateString.includes('T')) {
+          const parsed = parseDateString(dateString)
           const year = parsed.getFullYear()
           const month = String(parsed.getMonth() + 1).padStart(2, '0')
           const dayNum = String(parsed.getDate()).padStart(2, '0')
           dateStr = `${year}-${month}-${dayNum}`
         } else {
-          dateStr = day.date.split('T')[0]
+          dateStr = dateString.split('T')[0]
         }
       } else {
         dateStr = String(day.date)

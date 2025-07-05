@@ -22,7 +22,9 @@ export function generate75DayCalendar(
 
   for (let i = 0; i < 75; i++) {
     const dayNumber = i + 1
-    const date = addDays(normalizedStart, i)
+    // Create date by adding days to start date, then ensure it's at midnight local time
+    const date = new Date(normalizedStart)
+    date.setDate(normalizedStart.getDate() + i)
     date.setHours(0, 0, 0, 0)
     
     let status: DayStatus

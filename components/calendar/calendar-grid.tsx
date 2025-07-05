@@ -45,8 +45,9 @@ export function CalendarGrid({
     let currentMonthData: { name: string; year: number; days: CalendarDayType[] } | null = null
     
     days.forEach((day) => {
-      const monthName = monthNames[day.date.getMonth()]
-      const year = day.date.getFullYear()
+      const date = typeof day.date === 'string' ? new Date(day.date) : day.date
+      const monthName = monthNames[date.getMonth()]
+      const year = date.getFullYear()
       const monthKey = `${monthName} ${year}`
       
       if (!currentMonthData || currentMonthData.name !== monthKey) {

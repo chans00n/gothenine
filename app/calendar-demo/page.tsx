@@ -32,9 +32,12 @@ export default function CalendarDemoPage() {
   )
 
   const handleDayClick = (day: CalendarDay) => {
+    const dateStr = typeof day.date === 'string' 
+      ? new Date(day.date).toLocaleDateString() 
+      : day.date.toLocaleDateString()
     toast.info(
       `Day ${day.dayNumber} clicked`,
-      `Date: ${day.date.toLocaleDateString()}, Status: ${day.status}`
+      `Date: ${dateStr}, Status: ${day.status}`
     )
   }
 

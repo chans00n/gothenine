@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { CalendarDay, DayStatus } from '@/types/calendar'
 import { taskDefinitions } from '@/lib/task-definitions'
 import { createClient } from '@/lib/supabase/client'
+import { parseDateString } from '@/lib/utils/timezone'
 import { 
   CheckCircle2, 
   Circle,
@@ -88,17 +89,27 @@ export function EditableDayModal({
       // Convert date to YYYY-MM-DD format for database query
       let dateStr: string
       if (day.date instanceof Date) {
-        // Adjust for timezone to ensure correct date
-        const localDate = new Date(day.date.getTime() - (day.date.getTimezoneOffset() * 60000))
-        dateStr = localDate.toISOString().split('T')[0]
+        // Format as YYYY-MM-DD in local time
+        const year = day.date.getFullYear()
+        const month = String(day.date.getMonth() + 1).padStart(2, '0')
+        const dayNum = String(day.date.getDate()).padStart(2, '0')
+        dateStr = `${year}-${month}-${dayNum}`
       } else if (typeof day.date === 'string') {
         // If it's already a string, ensure it's in YYYY-MM-DD format
-        dateStr = day.date.split('T')[0]
+        if (day.date.includes('T')) {
+          const parsed = parseDateString(day.date)
+          const year = parsed.getFullYear()
+          const month = String(parsed.getMonth() + 1).padStart(2, '0')
+          const dayNum = String(parsed.getDate()).padStart(2, '0')
+          dateStr = `${year}-${month}-${dayNum}`
+        } else {
+          dateStr = day.date.split('T')[0]
+        }
       } else {
         dateStr = String(day.date)
       }
       
-      console.log('Loading data for day:', day.dayNumber, 'date:', dateStr, 'challengeId:', challengeId)
+      console.log('Loading data for day:', day.dayNumber, 'date:', dateStr, 'challengeId:', challengeId, 'raw date:', day.date)
       
       // Fetch the daily progress for this specific day
       const { data: progress, error } = await supabase
@@ -162,12 +173,22 @@ export function EditableDayModal({
       // Convert date to YYYY-MM-DD format for database
       let dateStr: string
       if (day.date instanceof Date) {
-        // Adjust for timezone to ensure correct date
-        const localDate = new Date(day.date.getTime() - (day.date.getTimezoneOffset() * 60000))
-        dateStr = localDate.toISOString().split('T')[0]
+        // Format as YYYY-MM-DD in local time
+        const year = day.date.getFullYear()
+        const month = String(day.date.getMonth() + 1).padStart(2, '0')
+        const dayNum = String(day.date.getDate()).padStart(2, '0')
+        dateStr = `${year}-${month}-${dayNum}`
       } else if (typeof day.date === 'string') {
         // If it's already a string, ensure it's in YYYY-MM-DD format
-        dateStr = day.date.split('T')[0]
+        if (day.date.includes('T')) {
+          const parsed = parseDateString(day.date)
+          const year = parsed.getFullYear()
+          const month = String(parsed.getMonth() + 1).padStart(2, '0')
+          const dayNum = String(parsed.getDate()).padStart(2, '0')
+          dateStr = `${year}-${month}-${dayNum}`
+        } else {
+          dateStr = day.date.split('T')[0]
+        }
       } else {
         dateStr = String(day.date)
       }
@@ -272,7 +293,14 @@ export function EditableDayModal({
             <DialogTitle className="text-xl">Day {day.dayNumber}</DialogTitle>
             <div className="flex items-center gap-2 mt-1">
               <span className="text-sm text-muted-foreground">
-                {format(day.date instanceof Date ? day.date : new Date(day.date), 'EEEE, MMMM d, yyyy')}
+                {format(
+                  day.date instanceof Date 
+                    ? day.date 
+                    : typeof day.date === 'string' 
+                      ? parseDateString(day.date) 
+                      : new Date(day.date), 
+                  'EEEE, MMMM d, yyyy'
+                )}
               </span>
               <Badge 
                 variant="secondary" 

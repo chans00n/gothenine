@@ -50,6 +50,7 @@ export function CalendarWithDetails({
     // Don't allow clicking on future days
     if (day.status === DayStatus.FUTURE) return
     
+    console.log('Calendar: Clicked on day', day.dayNumber, 'with date', day.date)
     setSelectedDay(day)
     setIsModalOpen(true)
   }

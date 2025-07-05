@@ -9,7 +9,7 @@ export enum DayStatus {
 
 export interface CalendarDay {
   dayNumber: number
-  date: Date
+  date: Date | string  // Can be either Date object or ISO string
   status: DayStatus
   tasksCompleted?: number
   totalTasks?: number

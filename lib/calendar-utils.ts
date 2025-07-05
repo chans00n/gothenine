@@ -22,9 +22,10 @@ export function generate75DayCalendar(
 
   for (let i = 0; i < 75; i++) {
     const dayNumber = i + 1
-    // Create date by adding days to start date, then ensure it's at midnight local time
-    const date = new Date(normalizedStart)
-    date.setDate(normalizedStart.getDate() + i)
+    // Create date by adding days to start date
+    // Use time arithmetic to avoid date rollover issues
+    const date = new Date(normalizedStart.getTime() + (i * 24 * 60 * 60 * 1000))
+    // Ensure it's at midnight local time
     date.setHours(0, 0, 0, 0)
     
     let status: DayStatus
@@ -47,9 +48,12 @@ export function generate75DayCalendar(
       status = DayStatus.SKIPPED
     }
 
+    // Store date as YYYY-MM-DD string to avoid timezone serialization issues
+    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+    
     calendar.push({
       dayNumber,
-      date,
+      date: dateStr,
       status,
       tasksCompleted: dayData?.tasksCompleted || 0,
       totalTasks: dayData?.totalTasks || 6,

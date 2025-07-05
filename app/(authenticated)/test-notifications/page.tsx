@@ -19,6 +19,7 @@ export default function TestNotificationsPage() {
   const [debugInfo, setDebugInfo] = useState<any>(null)
   const [showDebug, setShowDebug] = useState(false)
   const [swStatus, setSwStatus] = useState<string>('Checking...')
+  const [swRegistration, setSwRegistration] = useState<ServiceWorkerRegistration | null>(null)
 
   // Check push notification status on mount
   useEffect(() => {
@@ -41,11 +42,13 @@ export default function TestNotificationsPage() {
       
       if (registrations.length > 0) {
         setSwStatus(`Registered (${registrations.length})`)
+        setSwRegistration(registrations[0]) // Store the first registration
         // Also update the UI to reflect we can now enable push
         const notificationService = getNotificationService()
         setPushEnabled(notificationService.getPermissionStatus() === 'granted')
       } else {
         setSwStatus('Not registered')
+        setSwRegistration(null)
       }
     } catch (error) {
       console.error('Error checking service worker:', error)
@@ -69,6 +72,9 @@ export default function TestNotificationsPage() {
       })
       
       console.log('Service worker registered:', registration)
+      
+      // Store the registration immediately
+      setSwRegistration(registration)
       
       // Don't wait for ready - just check if it registered
       toast.success('Service worker registered successfully!')
@@ -159,32 +165,39 @@ export default function TestNotificationsPage() {
       }
       console.log('Service worker supported')
       
-      // Get the service worker registration directly
+      // Get the service worker registration
       console.log('Getting service worker registration...')
       
       let registration
-      try {
-        // Try to get the ready registration with a shorter timeout
-        const registrationPromise = navigator.serviceWorker.ready
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Service worker timeout')), 5000)
-        )
-        
-        registration = await Promise.race([registrationPromise, timeoutPromise]) as ServiceWorkerRegistration
-        console.log('Service worker ready:', registration)
-      } catch (timeoutError) {
-        console.log('Service worker ready timed out, getting registrations manually...')
-        
-        // Fallback: get the first registration
-        const registrations = await navigator.serviceWorker.getRegistrations()
-        if (registrations.length > 0) {
-          registration = registrations[0]
-          console.log('Using first registration:', registration)
-        } else {
-          console.error('No service worker registrations found')
-          toast.error('No service worker found. Please register it first.')
-          setLoading(null)
-          return
+      
+      // First, check if we have a stored registration
+      if (swRegistration) {
+        console.log('Using stored registration:', swRegistration)
+        registration = swRegistration
+      } else {
+        try {
+          // Try to get the ready registration with a shorter timeout
+          const registrationPromise = navigator.serviceWorker.ready
+          const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Service worker timeout')), 5000)
+          )
+          
+          registration = await Promise.race([registrationPromise, timeoutPromise]) as ServiceWorkerRegistration
+          console.log('Service worker ready:', registration)
+        } catch (timeoutError) {
+          console.log('Service worker ready timed out, getting registrations manually...')
+          
+          // Fallback: get the first registration
+          const registrations = await navigator.serviceWorker.getRegistrations()
+          if (registrations.length > 0) {
+            registration = registrations[0]
+            console.log('Using first registration:', registration)
+          } else {
+            console.error('No service worker registrations found')
+            toast.error('No service worker found. Please register it first.')
+            setLoading(null)
+            return
+          }
         }
       }
 

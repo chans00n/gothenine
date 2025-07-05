@@ -18,14 +18,61 @@ export default function TestNotificationsPage() {
   const [pushEnabled, setPushEnabled] = useState(false)
   const [debugInfo, setDebugInfo] = useState<any>(null)
   const [showDebug, setShowDebug] = useState(false)
+  const [swStatus, setSwStatus] = useState<string>('Checking...')
 
   // Check push notification status on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const notificationService = getNotificationService()
       setPushEnabled(notificationService.getPermissionStatus() === 'granted')
+      checkServiceWorker()
     }
   }, [])
+
+  const checkServiceWorker = async () => {
+    if (!('serviceWorker' in navigator)) {
+      setSwStatus('Not supported')
+      return
+    }
+
+    const registrations = await navigator.serviceWorker.getRegistrations()
+    if (registrations.length > 0) {
+      setSwStatus(`Registered (${registrations.length})`)
+    } else {
+      setSwStatus('Not registered')
+    }
+  }
+
+  const registerServiceWorker = async () => {
+    try {
+      console.log('Manually registering service worker...')
+      setLoading('sw-register')
+      
+      if (!('serviceWorker' in navigator)) {
+        toast.error('Service workers not supported')
+        return
+      }
+
+      // Register the service worker
+      const registration = await navigator.serviceWorker.register('/sw.js', {
+        scope: '/'
+      })
+      
+      console.log('Service worker registered:', registration)
+      
+      // Wait for it to be ready
+      await navigator.serviceWorker.ready
+      console.log('Service worker is ready')
+      
+      toast.success('Service worker registered successfully!')
+      await checkServiceWorker()
+    } catch (error) {
+      console.error('Service worker registration error:', error)
+      toast.error('Failed to register service worker')
+    } finally {
+      setLoading(null)
+    }
+  }
 
   const testInAppNotifications = async () => {
     setLoading('in-app')
@@ -308,7 +355,19 @@ export default function TestNotificationsPage() {
           <div className="text-sm space-y-1">
             <p>Current Permission: <strong>{typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'Not supported'}</strong></p>
             <p>PWA Mode: <strong>{isPWA ? 'Yes ✅' : 'No ❌'}</strong></p>
+            <p>Service Worker: <strong>{swStatus}</strong></p>
           </div>
+          
+          {swStatus === 'Not registered' && (
+            <Button 
+              onClick={registerServiceWorker}
+              variant="outline"
+              className="w-full"
+              disabled={loading === 'sw-register'}
+            >
+              {loading === 'sw-register' ? 'Registering...' : 'Register Service Worker'}
+            </Button>
+          )}
           
           <Button 
             onClick={enablePushNotifications} 

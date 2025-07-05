@@ -53,6 +53,12 @@ export function formatDateForDB(date: Date): string {
   return `${year}-${month}-${day}`
 }
 
+// Parse a YYYY-MM-DD date string as a local date (not UTC)
+export function parseDateString(dateStr: string): Date {
+  const [year, month, day] = dateStr.split('-').map(Number)
+  return new Date(year, month - 1, day, 0, 0, 0, 0)
+}
+
 export function getDateInUserTimezone(timezone: string): string {
   const today = getTodayInTimezone(timezone)
   return formatDateForDB(today)

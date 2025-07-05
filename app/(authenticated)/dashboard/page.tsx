@@ -5,6 +5,7 @@ import { DashboardHeader } from '@/components/dashboard/dashboard-header'
 import { QuickActions } from '@/components/dashboard/quick-actions'
 import { taskDefinitions, createDailyTasks } from '@/lib/task-definitions'
 import { generate75DayCalendar, getCurrentDayNumber } from '@/lib/calendar-utils'
+import { parseDateString } from '@/lib/utils/timezone'
 import { revalidatePath, revalidateTag } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { Suspense } from 'react'
@@ -129,7 +130,20 @@ async function getMinimalDashboardData() {
 
   // If no active challenge, create one
   let challengeId = challenge?.id
-  let startDate = challenge?.start_date ? new Date(challenge.start_date) : new Date()
+  let startDate: Date
+  
+  if (challenge?.start_date) {
+    // Parse the date string properly if it's in YYYY-MM-DD format
+    if (challenge.start_date.includes('T')) {
+      // ISO format with time
+      startDate = new Date(challenge.start_date)
+    } else {
+      // YYYY-MM-DD format
+      startDate = parseDateString(challenge.start_date)
+    }
+  } else {
+    startDate = new Date()
+  }
   
   if (!challenge) {
     const { data: newChallenge } = await supabase

@@ -8,6 +8,7 @@ import { workoutHistoryService } from '@/lib/services/workout-history'
 import { Dumbbell, Calendar, TrendingUp, Trophy, Target, CheckCircle2, Timer } from 'lucide-react'
 import { toast } from '@/lib/toast'
 import { taskHelpers } from '@/lib/services/task-completion'
+import { BackgroundTips } from '@/components/timer/background-tips'
 
 interface TimerPageContentProps {
   challengeId: string
@@ -140,6 +141,7 @@ export function TimerPageContent({ challengeId }: TimerPageContentProps) {
       {/* Main Content */}
       <div className="container px-4 py-6 md:py-8">
         <div className="max-w-6xl mx-auto">
+          <BackgroundTips />
           <div className="grid lg:grid-cols-3 gap-6 md:gap-8">
             
             {/* Timer Section */}

@@ -8,6 +8,7 @@ import { walkHistoryService } from '@/lib/services/walk-history'
 import { Footprints, Calendar, TrendingUp, MapPin, Target, CheckCircle2 } from 'lucide-react'
 import { toast } from '@/lib/toast'
 import { taskHelpers } from '@/lib/services/task-completion'
+import { BackgroundTips } from '@/components/timer/background-tips'
 
 interface WalkPageContentProps {
   challengeId: string
@@ -163,6 +164,7 @@ export function WalkPageContent({ challengeId }: WalkPageContentProps) {
       {/* Main Content */}
       <div className="container px-4 py-6 md:py-8">
         <div className="max-w-6xl mx-auto">
+          <BackgroundTips />
           <div className="grid lg:grid-cols-3 gap-6 md:gap-8">
             
             {/* Walk Timer Section */}

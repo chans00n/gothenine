@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { toast } from '@/lib/toast'
+import { requestWakeLock, releaseWakeLock, startSilentAudio, stopSilentAudio } from '@/lib/utils/wake-lock'
 
 interface TimerState {
   seconds: number
@@ -31,20 +32,42 @@ export function useWorkoutTimer({
   })
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
+  const lastActiveTime = useRef<number>(Date.now())
+  const totalElapsedRef = useRef<number>(0)
   const notificationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const serviceWorkerRef = useRef<ServiceWorker | null>(null)
 
-  // Clear interval on unmount
+  // Handle visibility changes and cleanup
   useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden && state.isRunning && !state.isPaused) {
+        // App is going to background - save current state
+        lastActiveTime.current = Date.now()
+        totalElapsedRef.current = state.seconds
+      } else if (!document.hidden && state.isRunning && !state.isPaused) {
+        // App is coming back to foreground - calculate elapsed time
+        const elapsed = Math.floor((Date.now() - lastActiveTime.current) / 1000)
+        setState(prev => ({
+          ...prev,
+          seconds: totalElapsedRef.current + elapsed
+        }))
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    
     return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
       if (intervalRef.current) {
         clearInterval(intervalRef.current)
       }
       if (notificationTimeoutRef.current) {
         clearTimeout(notificationTimeoutRef.current)
       }
+      releaseWakeLock()
+      stopSilentAudio()
     }
-  }, [])
+  }, [state.isRunning, state.isPaused, state.seconds])
 
   // Timer tick effect
   useEffect(() => {
@@ -114,7 +137,7 @@ export function useWorkoutTimer({
   }, [])
 
   // Start timer
-  const start = useCallback(() => {
+  const start = useCallback(async () => {
     const newState = {
       isRunning: true,
       isPaused: false,
@@ -126,6 +149,16 @@ export function useWorkoutTimer({
 
     // Request notification permission on first start
     requestNotificationPermission()
+    
+    // Try to keep screen awake
+    await requestWakeLock()
+    
+    // Start silent audio to keep app active on iOS
+    startSilentAudio()
+    
+    // Update tracking references
+    lastActiveTime.current = Date.now()
+    totalElapsedRef.current = state.seconds
 
     // Notify service worker
     if (serviceWorkerRef.current) {
@@ -170,11 +203,19 @@ export function useWorkoutTimer({
   }, [state.startTime, state.seconds])
 
   // Resume timer
-  const resume = useCallback(() => {
+  const resume = useCallback(async () => {
     setState(prev => ({
       ...prev,
       isPaused: false
     }))
+    
+    // Re-acquire wake lock and restart audio
+    await requestWakeLock()
+    startSilentAudio()
+    
+    // Update tracking references
+    lastActiveTime.current = Date.now()
+    totalElapsedRef.current = state.seconds
 
     // Notify service worker
     if (serviceWorkerRef.current) {
@@ -192,7 +233,7 @@ export function useWorkoutTimer({
   }, [state.startTime, state.seconds])
 
   // Stop/Reset timer
-  const stop = useCallback(() => {
+  const stop = useCallback(async () => {
     setState({
       seconds: 0,
       isRunning: false,
@@ -208,6 +249,10 @@ export function useWorkoutTimer({
 
     // Clear localStorage
     localStorage.removeItem('workout_timer_state')
+    
+    // Release wake lock and stop audio
+    await releaseWakeLock()
+    stopSilentAudio()
   }, [])
 
   // Complete workout

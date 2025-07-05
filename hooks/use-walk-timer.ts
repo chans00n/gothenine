@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { toast } from '@/lib/toast'
+import { requestWakeLock, releaseWakeLock, startSilentAudio, stopSilentAudio } from '@/lib/utils/wake-lock'
 
 interface WalkTimerState {
   seconds: number
@@ -33,15 +34,37 @@ export function useWalkTimer({
   })
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
+  const lastActiveTime = useRef<number>(Date.now())
+  const totalElapsedRef = useRef<number>(0)
 
-  // Clear interval on unmount
+  // Handle visibility changes and cleanup
   useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden && state.isRunning && !state.isPaused) {
+        // App is going to background - save current state
+        lastActiveTime.current = Date.now()
+        totalElapsedRef.current = state.seconds
+      } else if (!document.hidden && state.isRunning && !state.isPaused) {
+        // App is coming back to foreground - calculate elapsed time
+        const elapsed = Math.floor((Date.now() - lastActiveTime.current) / 1000)
+        setState(prev => ({
+          ...prev,
+          seconds: totalElapsedRef.current + elapsed
+        }))
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    
     return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
       if (intervalRef.current) {
         clearInterval(intervalRef.current)
       }
+      releaseWakeLock()
+      stopSilentAudio()
     }
-  }, [])
+  }, [state.isRunning, state.isPaused, state.seconds])
 
   // Timer tick effect
   useEffect(() => {
@@ -105,7 +128,7 @@ export function useWalkTimer({
   }, [])
 
   // Start timer
-  const start = useCallback(() => {
+  const start = useCallback(async () => {
     setState(prev => ({
       ...prev,
       isRunning: true,
@@ -116,6 +139,16 @@ export function useWalkTimer({
 
     // Request notification permission on first start
     requestNotificationPermission()
+    
+    // Try to keep screen awake
+    await requestWakeLock()
+    
+    // Start silent audio to keep app active on iOS
+    startSilentAudio()
+    
+    // Update tracking references
+    lastActiveTime.current = Date.now()
+    totalElapsedRef.current = state.seconds
 
     // Save to localStorage for persistence
     localStorage.setItem('walk_timer_state', JSON.stringify({
@@ -149,11 +182,19 @@ export function useWalkTimer({
   }, [state])
 
   // Resume timer
-  const resume = useCallback(() => {
+  const resume = useCallback(async () => {
     setState(prev => ({
       ...prev,
       isPaused: false
     }))
+    
+    // Re-acquire wake lock and restart audio
+    await requestWakeLock()
+    startSilentAudio()
+    
+    // Update tracking references
+    lastActiveTime.current = Date.now()
+    totalElapsedRef.current = state.seconds
 
     // Update localStorage
     const savedState = {
@@ -168,7 +209,7 @@ export function useWalkTimer({
   }, [state])
 
   // Stop/Reset timer
-  const stop = useCallback(() => {
+  const stop = useCallback(async () => {
     setState({
       seconds: 0,
       isRunning: false,
@@ -181,6 +222,10 @@ export function useWalkTimer({
 
     // Clear localStorage
     localStorage.removeItem('walk_timer_state')
+    
+    // Release wake lock and stop audio
+    await releaseWakeLock()
+    stopSilentAudio()
   }, [state.distance, state.distanceUnit])
 
   // Complete walk

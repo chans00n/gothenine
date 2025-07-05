@@ -76,6 +76,17 @@ export default function TestNotificationsPage() {
       // Store the registration immediately
       setSwRegistration(registration)
       
+      // If there's an active worker, we're good
+      if (registration.active) {
+        console.log('Service worker is already active')
+      } else if (registration.installing || registration.waiting) {
+        console.log('Service worker is installing/waiting, triggering skipWaiting...')
+        
+        // Send skip waiting message to service worker
+        const worker = registration.installing || registration.waiting
+        worker?.postMessage({ type: 'SKIP_WAITING' })
+      }
+      
       // Don't wait for ready - just check if it registered
       toast.success('Service worker registered successfully!')
       await checkServiceWorker()
@@ -241,6 +252,50 @@ export default function TestNotificationsPage() {
 
   const subscribeToPushNotifications = async (registration: ServiceWorkerRegistration) => {
     try {
+      // Wait for service worker to be active
+      if (!registration.active) {
+        console.log('Waiting for service worker to activate...')
+        
+        // Wait for the service worker to become active
+        await new Promise<void>((resolve) => {
+          if (registration.active) {
+            resolve()
+            return
+          }
+          
+          // Listen for state changes
+          const stateChangeHandler = () => {
+            if (registration.active) {
+              console.log('Service worker is now active')
+              registration.installing?.removeEventListener('statechange', stateChangeHandler)
+              registration.waiting?.removeEventListener('statechange', stateChangeHandler)
+              resolve()
+            }
+          }
+          
+          if (registration.installing) {
+            console.log('Service worker is installing...')
+            registration.installing.addEventListener('statechange', stateChangeHandler)
+          }
+          if (registration.waiting) {
+            console.log('Service worker is waiting...')
+            registration.waiting.addEventListener('statechange', stateChangeHandler)
+          }
+          
+          // Timeout after 10 seconds
+          setTimeout(() => {
+            console.error('Service worker activation timeout')
+            resolve() // Resolve anyway to try
+          }, 10000)
+        })
+      }
+      
+      console.log('Service worker state:', {
+        active: !!registration.active,
+        waiting: !!registration.waiting,
+        installing: !!registration.installing
+      })
+      
       console.log('Checking for existing subscription...')
       
       // Check if already subscribed

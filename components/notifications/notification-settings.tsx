@@ -58,10 +58,23 @@ export function NotificationSettings({ timezone }: NotificationSettingsProps) {
     setIsSaving(true)
 
     try {
-      // Save preferences
+      // Save preferences to localStorage for immediate local use
       localStorage.setItem('75hard-notification-preferences', JSON.stringify(preferences))
 
-      // Schedule notifications if enabled
+      // Save preferences to database
+      const response = await fetch('/api/notifications/preferences', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(preferences)
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to save preferences to server')
+      }
+
+      // Schedule local notifications if enabled
       const notificationService = getNotificationService()
       if (preferences.enabled && hasPermission) {
         await notificationService.scheduleNotifications(preferences, timezone)

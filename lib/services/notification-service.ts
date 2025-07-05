@@ -148,8 +148,25 @@ class NotificationService {
 
   // Send subscription to server
   private async sendSubscriptionToServer(subscription: PushSubscription) {
-    // TODO: Implement sending subscription to your backend
-    console.log('Subscription:', subscription)
+    try {
+      const response = await fetch('/api/notifications/subscribe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(subscription.toJSON())
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to save subscription on server')
+      }
+
+      const result = await response.json()
+      console.log('Subscription saved:', result)
+    } catch (error) {
+      console.error('Failed to send subscription to server:', error)
+      throw error
+    }
   }
 
   // Show a notification immediately

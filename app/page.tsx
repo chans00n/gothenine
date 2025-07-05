@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -8,21 +8,44 @@ import { Button } from '@/components/ui/button'
 import { Logo } from '@/components/ui/logo'
 import { motion } from 'framer-motion'
 import { ChevronRight } from 'lucide-react'
+import { DotsSpinner } from '@/components/ui/loading-spinner'
 
 export default function Home() {
   const router = useRouter()
   const supabase = createClient()
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true)
 
   useEffect(() => {
     // Check if user is logged in and redirect
     const checkUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        router.push('/dashboard')
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          router.push('/dashboard')
+        } else {
+          setIsCheckingAuth(false)
+        }
+      } catch (error) {
+        console.error('Auth check error:', error)
+        setIsCheckingAuth(false)
       }
     }
     checkUser()
   }, [router, supabase.auth])
+
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center px-4">
+        <div className="mb-8">
+          <Logo width={200} height={64} />
+        </div>
+        <DotsSpinner size="lg" />
+        <p className="mt-4 text-sm text-muted-foreground">
+          Checking authentication...
+        </p>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">

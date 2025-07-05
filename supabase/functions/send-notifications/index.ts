@@ -111,11 +111,12 @@ serve(async (req) => {
       }
     }
 
-    // 3. Water reminders (every 2 hours between 7 AM and 9 PM)
-    const currentHour = now.getUTCHours()
+    // 3. Water reminders (check every user's timezone)
     const currentMinute = now.getUTCMinutes()
     
-    if (currentHour >= 7 && currentHour <= 21 && currentMinute === 0 && currentHour % 2 === 1) {
+    // Only check at the top of the hour when cron runs
+    if (currentMinute >= 0 && currentMinute < 5) {
+      // Get all users with water reminders enabled along with their timezone
       const { data: waterUsers } = await supabase
         .from('notification_preferences')
         .select('user_id, water_reminder_interval')
@@ -123,20 +124,49 @@ serve(async (req) => {
         .eq('water_reminders', true)
 
       if (waterUsers) {
+        // Get user profiles to check timezone
+        const userIds = waterUsers.map(u => u.user_id)
+        const { data: profiles } = await supabase
+          .from('user_profiles')
+          .select('id, timezone')
+          .in('id', userIds)
+
         for (const user of waterUsers) {
-          notificationsToSend.push({
-            userId: user.user_id,
-            payload: {
-              title: 'Water Reminder 💧',
-              body: 'Time to drink water! Stay hydrated!',
-              tag: 'water',
-              data: { type: 'water' },
-              actions: [
-                { action: 'log-water', title: 'Log Water' },
-                { action: 'snooze', title: 'Remind Later' }
-              ]
+          const profile = profiles?.find(p => p.id === user.user_id)
+          const userTimezone = profile?.timezone || 'America/New_York'
+          
+          // Get current hour in user's timezone
+          const userTime = new Date(now.toLocaleString('en-US', { timeZone: userTimezone }))
+          const userHour = userTime.getHours()
+          
+          console.log(`Water reminder check for user ${user.user_id}: timezone=${userTimezone}, userHour=${userHour}, interval=${user.water_reminder_interval || 2}`)
+          
+          // Send water reminders between 7 AM and 9 PM in user's timezone
+          // Every interval hours (default 2)
+          const interval = user.water_reminder_interval || 2
+          
+          // Check if it's within waking hours and at the right interval
+          if (userHour >= 7 && userHour <= 21) {
+            // For interval of 2, send at: 8, 10, 12, 14, 16, 18, 20
+            // Start from 8 AM (first reminder after 7 AM start)
+            const hoursSince8AM = userHour - 8
+            if (hoursSince8AM >= 0 && hoursSince8AM % interval === 0) {
+              console.log(`Sending water reminder to user ${user.user_id} at hour ${userHour}`)
+              notificationsToSend.push({
+              userId: user.user_id,
+              payload: {
+                title: 'Water Reminder 💧',
+                body: 'Time to drink water! Stay hydrated!',
+                tag: 'water',
+                data: { type: 'water' },
+                actions: [
+                  { action: 'log-water', title: 'Log Water' },
+                  { action: 'snooze', title: 'Remind Later' }
+                ]
+              }
+            })
             }
-          })
+          }
         }
       }
     }

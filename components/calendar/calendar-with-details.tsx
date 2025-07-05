@@ -91,8 +91,8 @@ export function CalendarWithDetails({
     <>
       <div className="space-y-6">
         {/* Calendar grid - responsive with CSS grid */}
-        <div className="overflow-hidden rounded-xl border bg-card">
-          <div className="p-4">
+        <div className="overflow-hidden rounded-2xl bg-card/50 backdrop-blur-sm border border-border/50 shadow-sm">
+          <div className="p-6">
             <div className="grid gap-2 grid-cols-7 md:grid-cols-15">
               {Array.from({ length: 75 }).map((_, index) => {
                 const dayNumber = index + 1

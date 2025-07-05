@@ -222,26 +222,20 @@ export default async function CalendarPage() {
             {/* Calendar - Main focus area */}
             <div className="lg:col-span-2 space-y-6">
               {/* Main Calendar */}
-              <Card>
-                <CardContent>
-                  <Suspense fallback={
-                    <div className="h-[400px] animate-pulse bg-muted rounded-lg" />
-                  }>
-                    <CalendarWithDetails
-                      startDate={startDate}
-                      currentDay={currentDay}
-                      days={calendarDays}
-                      challengeId={challengeId}
-                      timezone={timezone}
-                    />
-                  </Suspense>
-                </CardContent>
-              </Card>
+              <Suspense fallback={
+                <div className="h-[400px] animate-pulse bg-muted rounded-lg" />
+              }>
+                <CalendarWithDetails
+                  startDate={startDate}
+                  currentDay={currentDay}
+                  days={calendarDays}
+                  challengeId={challengeId}
+                  timezone={timezone}
+                />
+              </Suspense>
 
-              {/* Smaller Calendar Legend */}
-              <div className="max-w-2xl">
-                <CalendarLegend />
-              </div>
+              {/* Calendar Legend */}
+              <CalendarLegend />
             </div>
 
             {/* Progress Overview Sidebar */}

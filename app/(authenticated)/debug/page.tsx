@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { getCurrentDayNumber } from '@/lib/calendar-utils'
-import { getTodayInTimezone } from '@/lib/utils/timezone'
+import { getTodayInTimezone, parseDateString } from '@/lib/utils/timezone'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default async function DebugPage() {
@@ -37,7 +37,8 @@ export default async function DebugPage() {
   const todayInTimezone = getTodayInTimezone(timezone)
   const startDateFromDB = challenge.start_date
   const startDateAsDate = new Date(startDateFromDB)
-  const currentDayNumber = getCurrentDayNumber(startDateAsDate, timezone)
+  const startDateParsed = parseDateString(startDateFromDB)
+  const currentDayNumber = getCurrentDayNumber(startDateParsed, timezone)
 
   // Get some daily progress to check date formats
   const { data: progress } = await supabase
@@ -73,8 +74,9 @@ export default async function DebugPage() {
             <div>Challenge ID: {challenge.id}</div>
             <div>Start Date (from DB): {startDateFromDB}</div>
             <div>Start Date (as Date): {startDateAsDate.toISOString()}</div>
-            <div>Start Date Local: {startDateAsDate.toLocaleDateString()}</div>
-            <div>Start Date Timezone Offset: {startDateAsDate.getTimezoneOffset()}</div>
+            <div>Start Date (parseDateString): {startDateParsed.toISOString()}</div>
+            <div>Start Date Local: {startDateParsed.toLocaleDateString()}</div>
+            <div>Start Date Timezone Offset: {startDateParsed.getTimezoneOffset()}</div>
             <div className="font-bold text-lg">Current Day Number: {currentDayNumber}</div>
           </CardContent>
         </Card>
@@ -85,11 +87,11 @@ export default async function DebugPage() {
           </CardHeader>
           <CardContent className="space-y-2 font-mono text-sm">
             <div>Today ms: {todayInTimezone.getTime()}</div>
-            <div>Start ms: {startDateAsDate.getTime()}</div>
-            <div>Diff ms: {todayInTimezone.getTime() - startDateAsDate.getTime()}</div>
-            <div>Diff days (raw): {(todayInTimezone.getTime() - startDateAsDate.getTime()) / (1000 * 60 * 60 * 24)}</div>
-            <div>Diff days (floor): {Math.floor((todayInTimezone.getTime() - startDateAsDate.getTime()) / (1000 * 60 * 60 * 24))}</div>
-            <div>Day Number (floor + 1): {Math.floor((todayInTimezone.getTime() - startDateAsDate.getTime()) / (1000 * 60 * 60 * 24)) + 1}</div>
+            <div>Start ms (parsed): {startDateParsed.getTime()}</div>
+            <div>Diff ms: {todayInTimezone.getTime() - startDateParsed.getTime()}</div>
+            <div>Diff days (raw): {(todayInTimezone.getTime() - startDateParsed.getTime()) / (1000 * 60 * 60 * 24)}</div>
+            <div>Diff days (floor): {Math.floor((todayInTimezone.getTime() - startDateParsed.getTime()) / (1000 * 60 * 60 * 24))}</div>
+            <div>Day Number (floor + 1): {Math.floor((todayInTimezone.getTime() - startDateParsed.getTime()) / (1000 * 60 * 60 * 24)) + 1}</div>
           </CardContent>
         </Card>
 

@@ -55,8 +55,28 @@ export function formatDateForDB(date: Date): string {
 
 // Parse a YYYY-MM-DD date string as a local date (not UTC)
 export function parseDateString(dateStr: string): Date {
-  const [year, month, day] = dateStr.split('-').map(Number)
-  return new Date(year, month - 1, day, 0, 0, 0, 0)
+  // Handle YYYY-MM-DD format
+  if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    const [year, month, day] = dateStr.split('-').map(Number)
+    return new Date(year, month - 1, day, 0, 0, 0, 0)
+  }
+  
+  // Handle ISO format (with or without time)
+  // First try to parse as-is
+  const date = new Date(dateStr)
+  if (!isNaN(date.getTime())) {
+    // Reset to midnight local time
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate(), 0, 0, 0, 0)
+  }
+  
+  // If all else fails, try to extract date parts
+  const match = dateStr.match(/(\d{4})-(\d{2})-(\d{2})/)
+  if (match) {
+    const [_, year, month, day] = match
+    return new Date(Number(year), Number(month) - 1, Number(day), 0, 0, 0, 0)
+  }
+  
+  throw new Error(`Unable to parse date string: ${dateStr}`)
 }
 
 export function getDateInUserTimezone(timezone: string): string {

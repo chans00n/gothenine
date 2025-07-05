@@ -133,14 +133,8 @@ async function getMinimalDashboardData() {
   let startDate: Date
   
   if (challenge?.start_date) {
-    // Parse the date string properly if it's in YYYY-MM-DD format
-    if (challenge.start_date.includes('T')) {
-      // ISO format with time
-      startDate = new Date(challenge.start_date)
-    } else {
-      // YYYY-MM-DD format
-      startDate = parseDateString(challenge.start_date)
-    }
+    // Always use parseDateString for consistent handling
+    startDate = parseDateString(challenge.start_date)
   } else {
     startDate = new Date()
   }

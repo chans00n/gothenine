@@ -42,14 +42,8 @@ async function getCalendarData() {
   let startDate: Date
   
   if (challenge?.start_date) {
-    // Parse the date string properly if it's in YYYY-MM-DD format
-    if (challenge.start_date.includes('T')) {
-      // ISO format with time
-      startDate = new Date(challenge.start_date)
-    } else {
-      // YYYY-MM-DD format
-      startDate = parseDateString(challenge.start_date)
-    }
+    // Always use parseDateString for consistent handling
+    startDate = parseDateString(challenge.start_date)
   } else {
     startDate = new Date()
   }
@@ -82,8 +76,7 @@ async function getCalendarData() {
   const progressMap = allProgress?.reduce((acc, progress) => {
     // Parse the date string properly to avoid timezone issues
     // progress.date is in YYYY-MM-DD format from the database
-    const [year, month, day] = progress.date.split('-').map(Number)
-    const progressDate = new Date(year, month - 1, day, 0, 0, 0, 0)
+    const progressDate = parseDateString(progress.date)
     
     // Ensure startDate is also normalized to midnight
     const normalizedStartDate = new Date(startDate)
@@ -93,10 +86,13 @@ async function getCalendarData() {
     const diffTime = progressDate.getTime() - normalizedStartDate.getTime()
     const dayNum = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1
     
-    acc[dayNum] = {
-      completed: progress.is_complete || (progress.tasks_completed >= 6),
-      tasksCompleted: progress.tasks_completed || 0,
-      totalTasks: 6
+    // Only include progress for days after the challenge started
+    if (dayNum >= 1 && dayNum <= 75) {
+      acc[dayNum] = {
+        completed: progress.is_complete || (progress.tasks_completed >= 6),
+        tasksCompleted: progress.tasks_completed || 0,
+        totalTasks: 6
+      }
     }
     return acc
   }, {} as any) || {}

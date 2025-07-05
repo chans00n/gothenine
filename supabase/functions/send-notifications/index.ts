@@ -30,7 +30,16 @@ serve(async (req) => {
   }
 
   try {
-    // Create Supabase client
+    // Verify authorization
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return new Response(
+        JSON.stringify({ error: 'Missing or invalid authorization header' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      )
+    }
+
+    // Create Supabase client with service role for database access
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseKey)
@@ -41,17 +50,7 @@ serve(async (req) => {
     
     console.log(`Notification cron running at ${now.toISOString()} (${currentTime} UTC)`)
 
-    // Import web-push
-    const webpush = await import('https://esm.sh/web-push@3.6.7')
-    
-    // Set VAPID details
-    const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY')!
-    const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY')!
-    const vapidSubject = Deno.env.get('VAPID_SUBJECT') || 'mailto:noreply@75hard-tracker.com'
-    
-    webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey)
-
-    const notifications: Array<{ userId: string; payload: NotificationPayload }> = []
+    const notificationsToSend: Array<{ userId: string; payload: NotificationPayload }> = []
 
     // 1. Daily reminders
     const { data: dailyUsers } = await supabase
@@ -65,7 +64,7 @@ serve(async (req) => {
         // Check if user's time matches current time (with 5-minute window)
         const userTime = user.daily_reminder_time
         if (isTimeMatch(currentTime, userTime, 5)) {
-          notifications.push({
+          notificationsToSend.push({
             userId: user.user_id,
             payload: {
               title: '75 Hard Daily Check-in',
@@ -94,7 +93,7 @@ serve(async (req) => {
         const times = user.workout_reminder_times || []
         times.forEach((time: string, index: number) => {
           if (isTimeMatch(currentTime, time, 5)) {
-            notifications.push({
+            notificationsToSend.push({
               userId: user.user_id,
               payload: {
                 title: `Workout ${index + 1} Reminder`,
@@ -125,7 +124,7 @@ serve(async (req) => {
 
       if (waterUsers) {
         for (const user of waterUsers) {
-          notifications.push({
+          notificationsToSend.push({
             userId: user.user_id,
             payload: {
               title: 'Water Reminder 💧',
@@ -152,7 +151,7 @@ serve(async (req) => {
     if (readingUsers) {
       for (const user of readingUsers) {
         if (isTimeMatch(currentTime, user.reading_reminder_time, 5)) {
-          notifications.push({
+          notificationsToSend.push({
             userId: user.user_id,
             payload: {
               title: 'Reading Time 📚',
@@ -179,7 +178,7 @@ serve(async (req) => {
     if (photoUsers) {
       for (const user of photoUsers) {
         if (isTimeMatch(currentTime, user.photo_reminder_time, 5)) {
-          notifications.push({
+          notificationsToSend.push({
             userId: user.user_id,
             payload: {
               title: 'Progress Photo 📸',
@@ -196,15 +195,40 @@ serve(async (req) => {
       }
     }
 
-    // Send all notifications
-    const results = await sendNotifications(supabase, webpush, notifications)
+    // Send notifications via your Next.js API
+    let sent = 0
+    let failed = 0
+
+    for (const { userId, payload } of notificationsToSend) {
+      try {
+        const response = await fetch('https://www.gothenine.com/api/notifications/send', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${Deno.env.get('NOTIFICATION_API_KEY') || 'internal-key'}`
+          },
+          body: JSON.stringify({ userId, notification: payload })
+        })
+
+        if (response.ok) {
+          sent++
+        } else {
+          failed++
+          console.error(`Failed to send notification to user ${userId}:`, await response.text())
+        }
+      } catch (error) {
+        failed++
+        console.error(`Error sending notification to user ${userId}:`, error)
+      }
+    }
 
     return new Response(
       JSON.stringify({
         success: true,
         timestamp: now.toISOString(),
-        notificationsSent: results.sent,
-        notificationsFailed: results.failed
+        notificationsQueued: notificationsToSend.length,
+        notificationsSent: sent,
+        notificationsFailed: failed
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -233,77 +257,4 @@ function isTimeMatch(currentTime: string, targetTime: string, windowMinutes: num
   
   const diff = Math.abs(currentMinutes - targetMinutes)
   return diff <= windowMinutes
-}
-
-// Send notifications to users
-async function sendNotifications(
-  supabase: any,
-  webpush: any,
-  notifications: Array<{ userId: string; payload: NotificationPayload }>
-): Promise<{ sent: number; failed: number }> {
-  let sent = 0
-  let failed = 0
-
-  // Group notifications by user
-  const notificationsByUser = new Map<string, NotificationPayload[]>()
-  for (const { userId, payload } of notifications) {
-    if (!notificationsByUser.has(userId)) {
-      notificationsByUser.set(userId, [])
-    }
-    notificationsByUser.get(userId)!.push(payload)
-  }
-
-  // Send notifications to each user
-  for (const [userId, payloads] of notificationsByUser) {
-    // Get user's push subscriptions
-    const { data: subscriptions } = await supabase
-      .from('push_subscriptions')
-      .select('*')
-      .eq('user_id', userId)
-
-    if (!subscriptions || subscriptions.length === 0) {
-      failed += payloads.length
-      continue
-    }
-
-    // Send each notification to all user's devices
-    for (const payload of payloads) {
-      for (const subscription of subscriptions) {
-        try {
-          await webpush.sendNotification(
-            {
-              endpoint: subscription.endpoint,
-              keys: {
-                p256dh: subscription.p256dh,
-                auth: subscription.auth
-              }
-            },
-            JSON.stringify({
-              title: payload.title,
-              body: payload.body,
-              icon: payload.icon || '/icon-512x512.png',
-              badge: payload.badge || '/icon-192x192.png',
-              tag: payload.tag,
-              data: payload.data,
-              actions: payload.actions
-            })
-          )
-          sent++
-        } catch (error: any) {
-          failed++
-          console.error(`Failed to send notification to ${userId}:`, error.message)
-          
-          // Remove invalid subscriptions
-          if (error.statusCode === 410) {
-            await supabase
-              .from('push_subscriptions')
-              .delete()
-              .eq('id', subscription.id)
-          }
-        }
-      }
-    }
-  }
-
-  return { sent, failed }
 }

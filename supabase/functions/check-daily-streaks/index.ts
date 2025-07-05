@@ -25,15 +25,7 @@ serve(async (req) => {
     const now = new Date()
     console.log(`Daily streak check running at ${now.toISOString()}`)
 
-    // Import web-push
-    const webpush = await import('https://esm.sh/web-push@3.6.7')
-    
-    // Set VAPID details
-    const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY')!
-    const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY')!
-    const vapidSubject = Deno.env.get('VAPID_SUBJECT') || 'mailto:noreply@75hard-tracker.com'
-    
-    webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey)
+    // We'll send notifications via the Next.js API instead of using web-push directly
 
     // Get all active challenges
     const { data: challenges, error } = await supabase
@@ -72,7 +64,7 @@ serve(async (req) => {
           continue
         }
 
-        // Send streak notification to all user's devices
+        // Send streak notification via Next.js API
         const payload = {
           title: `🔥 ${challenge.current_streak} Day Streak!`,
           body: `Amazing! You've maintained a ${challenge.current_streak} day streak!`,
@@ -82,31 +74,25 @@ serve(async (req) => {
           data: { type: 'streak', days: challenge.current_streak }
         }
 
-        for (const subscription of subscriptions) {
-          try {
-            await webpush.sendNotification(
-              {
-                endpoint: subscription.endpoint,
-                keys: {
-                  p256dh: subscription.p256dh,
-                  auth: subscription.auth
-                }
-              },
-              JSON.stringify(payload)
-            )
+        try {
+          const response = await fetch('https://www.gothenine.com/api/notifications/send', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${Deno.env.get('NOTIFICATION_API_KEY') || 'internal-key'}`
+            },
+            body: JSON.stringify({ userId: challenge.user_id, notification: payload })
+          })
+
+          if (response.ok) {
             notificationsSent++
-          } catch (error: any) {
+          } else {
             notificationsFailed++
-            console.error(`Failed to send streak notification:`, error.message)
-            
-            // Remove invalid subscriptions
-            if (error.statusCode === 410) {
-              await supabase
-                .from('push_subscriptions')
-                .delete()
-                .eq('id', subscription.id)
-            }
+            console.error(`Failed to send streak notification to user ${challenge.user_id}:`, await response.text())
           }
+        } catch (error) {
+          notificationsFailed++
+          console.error(`Error sending streak notification to user ${challenge.user_id}:`, error)
         }
 
         // Also create achievement notification if it's a major milestone

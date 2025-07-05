@@ -4,6 +4,7 @@ const withPWA = require('next-pwa')({
   skipWaiting: true,
   disable: process.env.NODE_ENV === 'development',
   buildExcludes: [/middleware-manifest.json$/],
+  importScripts: ['/sw-notifications.js'],
   runtimeCaching: [
     {
       urlPattern: /^https?.*/,

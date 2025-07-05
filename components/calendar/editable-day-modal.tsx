@@ -275,6 +275,7 @@ export function EditableDayModal({
                 size="icon"
                 onClick={() => onNavigate('prev')}
                 className="h-8 w-8"
+                aria-label="Previous day"
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
@@ -283,6 +284,7 @@ export function EditableDayModal({
                 size="icon"
                 onClick={() => onNavigate('next')}
                 className="h-8 w-8"
+                aria-label="Next day"
               >
                 <ChevronRight className="h-4 w-4" />
               </Button>
@@ -328,6 +330,7 @@ export function EditableDayModal({
                         checked={task.completed}
                         onCheckedChange={() => handleTaskToggle(task.id)}
                         className="mt-0.5"
+                        aria-label={`Mark ${task.title} as ${task.completed ? 'incomplete' : 'complete'}`}
                       />
                       <div className="flex-1">
                         <h4 className={cn(

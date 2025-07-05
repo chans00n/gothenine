@@ -133,23 +133,42 @@ export default function TestNotificationsPage() {
 
   const subscribeToPushNotifications = async (registration: ServiceWorkerRegistration) => {
     try {
+      console.log('Checking for existing subscription...')
+      
       // Check if already subscribed
       let subscription = await registration.pushManager.getSubscription()
       
-      if (!subscription) {
+      if (subscription) {
+        console.log('Found existing subscription:', subscription.endpoint)
+        toast.info('Found existing subscription, updating server...')
+      } else {
+        console.log('No existing subscription, creating new one...')
+        
         // Subscribe with VAPID public key
         const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
         if (!vapidPublicKey) {
           throw new Error('VAPID public key not configured')
         }
         
-        subscription = await registration.pushManager.subscribe({
-          userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
-        })
+        console.log('VAPID key found, subscribing...')
+        
+        try {
+          subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
+          })
+          console.log('Subscription created:', subscription.endpoint)
+        } catch (subError) {
+          console.error('Subscribe error:', subError)
+          if ((subError as any).code === 0) {
+            toast.error('Push notifications not supported on this device. Make sure you are using Safari 16.4+ on iOS.')
+          }
+          throw subError
+        }
       }
       
       // Send subscription to server
+      console.log('Sending subscription to server...')
       const response = await fetch('/api/notifications/subscribe', {
         method: 'POST',
         headers: {
@@ -159,9 +178,12 @@ export default function TestNotificationsPage() {
       })
       
       if (!response.ok) {
-        throw new Error('Failed to save subscription on server')
+        const errorText = await response.text()
+        console.error('Server response error:', errorText)
+        throw new Error('Failed to save subscription on server: ' + errorText)
       }
       
+      console.log('Subscription saved successfully')
       toast.success('Push notifications subscribed successfully!')
       
       // Refresh debug info if it's showing
@@ -233,24 +255,33 @@ export default function TestNotificationsPage() {
       )}
 
       {/* Push Notification Permission */}
-      {!pushEnabled && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bell className="h-5 w-5" />
-              Enable Push Notifications
-            </CardTitle>
-            <CardDescription>
-              Allow push notifications to receive reminders even when the app is closed
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button onClick={enablePushNotifications} className="w-full">
-              Enable Push Notifications
-            </Button>
-          </CardContent>
-        </Card>
-      )}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Bell className="h-5 w-5" />
+            Push Notification Setup
+          </CardTitle>
+          <CardDescription>
+            {pushEnabled ? 'Push notifications are enabled' : 'Setup push notifications to receive reminders'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="text-sm space-y-1">
+            <p>Current Permission: <strong>{typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'Not supported'}</strong></p>
+            <p>PWA Mode: <strong>{isPWA ? 'Yes ✅' : 'No ❌'}</strong></p>
+          </div>
+          
+          <Button onClick={enablePushNotifications} className="w-full">
+            {pushEnabled ? 'Re-subscribe to Push Notifications' : 'Enable Push Notifications'}
+          </Button>
+          
+          {!isPWA && (
+            <p className="text-xs text-amber-600">
+              ⚠️ You must add this app to your home screen first
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
       {/* In-App Notifications */}
       <Card>

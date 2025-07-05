@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
 import { createClient } from '@/lib/supabase/server'
-import { MinimalCalendar } from '@/components/dashboard/minimal-calendar'
+import { CalendarWithDetails } from '@/components/calendar/calendar-with-details'
 import { CalendarLegend } from '@/components/calendar/calendar-legend'
 import { QuickActions } from '@/components/dashboard/quick-actions'
 import { generate75DayCalendar, getCurrentDayNumber, getCalendarStats } from '@/lib/calendar-utils'
@@ -156,6 +156,8 @@ export default async function CalendarPage() {
     currentDay, 
     calendarDays, 
     stats,
+    timezone,
+    challengeId,
     currentStreak,
     longestStreak,
     completedDays,
@@ -216,10 +218,12 @@ export default async function CalendarPage() {
                   <Suspense fallback={
                     <div className="h-[400px] animate-pulse bg-muted rounded-lg" />
                   }>
-                    <MinimalCalendar
+                    <CalendarWithDetails
                       startDate={startDate}
                       currentDay={currentDay}
                       days={calendarDays}
+                      challengeId={challengeId}
+                      timezone={timezone}
                     />
                   </Suspense>
                 </CardContent>

@@ -11,15 +11,21 @@ import { createClient } from '@/lib/supabase/client'
 import { 
   CheckCircle2, 
   Circle,
+  CircleCheck,
   ChevronLeft,
   ChevronRight,
   Save,
-  Loader2
+  Loader2,
+  Footprints, 
+  Dumbbell, 
+  BookOpen, 
+  Camera, 
+  Droplets, 
+  Apple
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
 import { toast } from 'sonner'
-import { Checkbox } from '@/components/ui/checkbox'
 
 interface EditableDayModalProps {
   isOpen: boolean
@@ -40,6 +46,16 @@ interface TaskData {
   duration?: number
   notes?: string
   photoUrl?: string
+}
+
+// Icon mapping for tasks
+const taskIcons: Record<string, React.ComponentType<any>> = {
+  'workout-indoor': Dumbbell,
+  'workout-outdoor': Footprints,
+  'follow-diet': Apple,
+  'water-intake': Droplets,
+  'read-nonfiction': BookOpen,
+  'progress-photo': Camera
 }
 
 export function EditableDayModal({ 
@@ -293,81 +309,120 @@ export function EditableDayModal({
         </DialogHeader>
 
         <div className="space-y-4 mt-4">
-          {/* Progress Summary */}
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium">Tasks Completed</p>
-                  <p className="text-2xl font-bold">{completedCount} / 6</p>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm text-muted-foreground">Progress</p>
-                  <p className="text-lg font-semibold">{Math.round((completedCount / 6) * 100)}%</p>
-                </div>
+          {/* Progress Summary - Styled like mobile task list */}
+          <div className="bg-accent dark:bg-accent rounded-3xl p-5">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-sm font-medium text-muted-foreground">Tasks for this day</p>
+              <div className="flex items-center gap-2">
+                <span className="text-2xl font-bold text-foreground">{completedCount}</span>
+                <span className="text-sm text-muted-foreground">of 6</span>
               </div>
-              <div className="mt-3 w-full bg-secondary rounded-full h-2 overflow-hidden">
-                <div 
-                  className="h-full bg-primary rounded-full transition-all duration-300"
-                  style={{ width: `${(completedCount / 6) * 100}%` }}
-                />
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+            <h2 className="text-2xl font-bold mb-4 text-foreground">
+              {completedCount === 6 ? (
+                'All tasks complete!'
+              ) : (
+                <>
+                  You have{' '}
+                  <span className="text-3xl">{6 - completedCount}</span>{' '}
+                  task{6 - completedCount !== 1 ? 's' : ''}{' '}
+                  <span className="text-primary">remaining</span>
+                </>
+              )}
+            </h2>
+            <div className="w-full bg-border rounded-full h-2 overflow-hidden">
+              <div 
+                className="h-full bg-primary rounded-full transition-all duration-300"
+                style={{ width: `${(completedCount / 6) * 100}%` }}
+              />
+            </div>
+          </div>
 
-          {/* Task List */}
+          {/* Task List - Styled like mobile task list */}
           <div className="space-y-3">
             {loading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin" />
               </div>
             ) : (
-              tasks.map(task => (
-                <Card key={task.id} className="overflow-hidden">
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-3">
-                      <Checkbox
-                        checked={task.completed}
-                        onCheckedChange={() => handleTaskToggle(task.id)}
-                        className="mt-0.5"
-                        aria-label={`Mark ${task.title} as ${task.completed ? 'incomplete' : 'complete'}`}
-                      />
-                      <div className="flex-1">
-                        <h4 className={cn(
-                          "font-medium",
-                          task.completed && "line-through text-muted-foreground"
-                        )}>
-                          {task.title}
-                        </h4>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {task.description}
-                        </p>
-                        {task.completedAt && (
-                          <p className="text-xs text-muted-foreground mt-2">
-                            Completed at {format(new Date(task.completedAt), 'h:mm a')}
-                          </p>
-                        )}
+              tasks.map(task => {
+                const Icon = taskIcons[task.id] || Circle
+                
+                return (
+                  <div
+                    key={task.id}
+                    className={cn(
+                      "relative bg-card rounded-3xl transition-all duration-300",
+                      "border border-border",
+                      "shadow-sm hover:shadow-md",
+                      task.completed && "opacity-70"
+                    )}
+                  >
+                    <div className="p-6">
+                      <div className="flex items-center gap-4">
+                        {/* Checkbox - Minimal design */}
+                        <button
+                          onClick={() => handleTaskToggle(task.id)}
+                          className="relative flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-full"
+                          aria-label={`Mark ${task.title} as ${task.completed ? 'incomplete' : 'complete'}`}
+                        >
+                          {task.completed ? (
+                            <CircleCheck className="w-7 h-7 text-primary" />
+                          ) : (
+                            <Circle className="w-7 h-7 text-border" />
+                          )}
+                        </button>
+
+                        {/* Task Content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex-1">
+                              <h3 className={cn(
+                                "text-xl font-bold leading-tight text-foreground",
+                                task.completed && "line-through opacity-60"
+                              )}>
+                                {task.title}
+                              </h3>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                {task.description}
+                              </p>
+                              {task.completedAt && (
+                                <p className="text-xs text-muted-foreground mt-2">
+                                  Completed at {format(new Date(task.completedAt), 'h:mm a')}
+                                </p>
+                              )}
+                            </div>
+                            
+                            {/* Icon - Subtle placement */}
+                            <div className={cn(
+                              "w-12 h-12 rounded-2xl flex items-center justify-center",
+                              task.completed ? "bg-accent" : "bg-secondary"
+                            )}>
+                              <Icon className={cn("w-6 h-6", task.completed ? "text-primary" : "text-muted-foreground")} />
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              ))
+                  </div>
+                )
+              })
             )}
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-3 pt-4 border-t">
+          {/* Action Buttons - Clean style */}
+          <div className="flex gap-3 pt-4">
             <Button
               variant="outline"
               onClick={onClose}
-              className="flex-1"
+              className="flex-1 rounded-full"
             >
               Cancel
             </Button>
             <Button
               onClick={handleSave}
               disabled={!hasChanges || saving}
-              className="flex-1"
+              className="flex-1 rounded-full bg-primary text-primary-foreground hover:opacity-80"
             >
               {saving ? (
                 <>

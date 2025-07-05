@@ -342,11 +342,18 @@ export function SettingsContent({ initialData }: SettingsContentProps) {
                     Configure your reminder settings
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-3">
                   <Link href="/settings/notifications">
                     <Button variant="outline" className="w-full justify-between">
                       <span>Manage Notifications</span>
                       <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                  <Link href="/test-notifications">
+                    <Button variant="outline" className="w-full justify-between">
+                      <span>Test Notifications</span>
+                      <Badge variant="secondary" className="ml-2">Dev</Badge>
+                      <ChevronRight className="h-4 w-4 ml-auto" />
                     </Button>
                   </Link>
                 </CardContent>

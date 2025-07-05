@@ -23,15 +23,8 @@ const taskIcons: Record<string, React.ComponentType<any>> = {
   'progress-photo': Camera
 }
 
-// Subtle accent colors for completed states
-const taskAccents: Record<string, string> = {
-  'workout-indoor': 'text-blue-600 dark:text-blue-400',
-  'workout-outdoor': 'text-green-600 dark:text-green-400',
-  'follow-diet': 'text-red-600 dark:text-red-400',
-  'water-intake': 'text-cyan-600 dark:text-cyan-400',
-  'read-nonfiction': 'text-purple-600 dark:text-purple-400',
-  'progress-photo': 'text-orange-600 dark:text-orange-400'
-}
+// All tasks use primary color when completed
+const completedIconColor = 'text-primary'
 
 const taskToolMapping: Record<string, { href: string; label: string }> = {
   'workout-indoor': { href: '/timer', label: 'Start' },
@@ -97,24 +90,24 @@ export function MobileTaskList({ tasks, onTaskToggle }: MobileTaskListProps) {
 
   return (
     <div className="space-y-4">
-      {/* Progress Summary - Yellow accent card like in the screenshot */}
-      <div className="bg-yellow-100 dark:bg-yellow-900/20 rounded-3xl p-5">
+      {/* Progress Summary - Using accent/secondary colors */}
+      <div className="bg-accent dark:bg-accent rounded-3xl p-5">
         <div className="flex items-center justify-between mb-1">
-          <p className="text-sm font-medium opacity-60">Current tasks</p>
+          <p className="text-sm font-medium text-muted-foreground">Current tasks</p>
           <div className="flex items-center gap-2">
-            <span className="text-2xl font-bold">{completedCount}</span>
-            <span className="text-sm opacity-60">of {totalCount}</span>
+            <span className="text-2xl font-bold text-foreground">{completedCount}</span>
+            <span className="text-sm text-muted-foreground">of {totalCount}</span>
           </div>
         </div>
-        <h2 className="text-2xl font-bold mb-4">
+        <h2 className="text-2xl font-bold mb-4 text-foreground">
           You have{' '}
           <span className="text-3xl">{totalCount - completedCount}</span>{' '}
           task{totalCount - completedCount !== 1 ? 's' : ''}{' '}
-          <span className="text-yellow-600 dark:text-yellow-400">for today</span>
+          <span className="text-primary">for today</span>
         </h2>
-        <div className="w-full bg-black/10 dark:bg-white/10 rounded-full h-2 overflow-hidden">
+        <div className="w-full bg-border rounded-full h-2 overflow-hidden">
           <motion.div
-            className="h-full bg-black dark:bg-white rounded-full"
+            className="h-full bg-primary rounded-full"
             initial={{ width: 0 }}
             animate={{ 
               width: `${(completedCount / totalCount) * 100}%` 
@@ -132,7 +125,6 @@ export function MobileTaskList({ tasks, onTaskToggle }: MobileTaskListProps) {
             
             const isCompleted = optimisticTasks[task.id] ?? task.completed
             const Icon = taskIcons[task.taskDefinitionId] || Check
-            const accentColor = taskAccents[task.taskDefinitionId]
             const tool = taskToolMapping[task.taskDefinitionId]
             
             return (
@@ -148,7 +140,8 @@ export function MobileTaskList({ tasks, onTaskToggle }: MobileTaskListProps) {
                   layout: { type: "spring", stiffness: 400, damping: 30 }
                 }}
                 className={cn(
-                  "relative bg-white dark:bg-gray-900 rounded-3xl transition-all duration-300",
+                  "relative bg-card rounded-3xl transition-all duration-300",
+                  "border border-border",
                   "shadow-sm hover:shadow-md",
                   pendingTasks.has(task.id) 
                     ? "opacity-50" 
@@ -159,7 +152,7 @@ export function MobileTaskList({ tasks, onTaskToggle }: MobileTaskListProps) {
                 <div
                   className={cn(
                     "p-6 cursor-pointer",
-                    !pendingTasks.has(task.id) && "active:bg-black/5 dark:active:bg-white/5"
+                    !pendingTasks.has(task.id) && "active:bg-accent/50"
                   )}
                   onClick={() => !pendingTasks.has(task.id) && handleToggle(task.id, task.taskDefinitionId, isCompleted)}
                 >
@@ -172,10 +165,10 @@ export function MobileTaskList({ tasks, onTaskToggle }: MobileTaskListProps) {
                           animate={{ scale: 1 }}
                           transition={{ type: "spring", stiffness: 600, damping: 30 }}
                         >
-                          <CircleCheck className={cn("w-7 h-7", accentColor)} />
+                          <CircleCheck className={cn("w-7 h-7", completedIconColor)} />
                         </motion.div>
                       ) : (
-                        <Circle className="w-7 h-7 text-gray-300 dark:text-gray-600" />
+                        <Circle className="w-7 h-7 text-border" />
                       )}
                     </div>
 
@@ -184,12 +177,12 @@ export function MobileTaskList({ tasks, onTaskToggle }: MobileTaskListProps) {
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex-1">
                           <h3 className={cn(
-                            "text-xl font-bold leading-tight",
+                            "text-xl font-bold leading-tight text-foreground",
                             isCompleted && "line-through opacity-60"
                           )}>
                             {task.definition.title}
                           </h3>
-                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                          <p className="text-sm text-muted-foreground mt-1">
                             {task.definition.description}
                           </p>
                           
@@ -197,7 +190,7 @@ export function MobileTaskList({ tasks, onTaskToggle }: MobileTaskListProps) {
                           <div className="flex items-center gap-4 mt-3">
                             {/* Duration */}
                             {task.definition.requiresDuration && (
-                              <div className="flex items-center gap-1.5 text-sm text-gray-500 dark:text-gray-400">
+                              <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                                 <Clock className="w-4 h-4" />
                                 <span>
                                   {task.duration 
@@ -208,11 +201,11 @@ export function MobileTaskList({ tasks, onTaskToggle }: MobileTaskListProps) {
                               </div>
                             )}
 
-                            {/* Quick Action - Black button like in screenshot */}
+                            {/* Quick Action - Using primary colors */}
                             {!isCompleted && tool && (
                               <Link
                                 href={tool.href}
-                                className="inline-flex items-center gap-2 bg-black dark:bg-white text-white dark:text-black px-4 py-1.5 rounded-full text-sm font-medium hover:opacity-80 transition-opacity"
+                                className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-1.5 rounded-full text-sm font-medium hover:opacity-80 transition-opacity"
                                 onClick={(e) => e.stopPropagation()}
                               >
                                 {tool.label}
@@ -225,9 +218,9 @@ export function MobileTaskList({ tasks, onTaskToggle }: MobileTaskListProps) {
                         {/* Icon - Subtle placement */}
                         <div className={cn(
                           "w-12 h-12 rounded-2xl flex items-center justify-center",
-                          isCompleted ? "bg-gray-100 dark:bg-gray-800" : "bg-gray-50 dark:bg-gray-800"
+                          isCompleted ? "bg-accent" : "bg-secondary"
                         )}>
-                          <Icon className={cn("w-6 h-6", isCompleted ? accentColor : "text-gray-400 dark:text-gray-500")} />
+                          <Icon className={cn("w-6 h-6", isCompleted ? completedIconColor : "text-muted-foreground")} />
                         </div>
                       </div>
                     </div>
@@ -246,12 +239,12 @@ export function MobileTaskList({ tasks, onTaskToggle }: MobileTaskListProps) {
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.9 }}
-            className="bg-green-100 dark:bg-green-900/20 rounded-3xl p-6 text-center"
+            className="bg-primary text-primary-foreground rounded-3xl p-6 text-center"
           >
             <h3 className="text-2xl font-bold mb-2">
               All tasks complete!
             </h3>
-            <p className="text-gray-600 dark:text-gray-300">
+            <p className="opacity-90">
               You're doing amazing. Keep it up tomorrow!
             </p>
           </motion.div>

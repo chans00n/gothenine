@@ -77,23 +77,75 @@ export default function TestNotificationsPage() {
 
   const enablePushNotifications = async () => {
     try {
+      // Check if we're in a PWA context
+      const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
+                    (window.navigator as any).standalone === true
+      
+      if (!isPWA) {
+        toast.error('Please add this app to your home screen first to enable push notifications')
+        return
+      }
+
+      // Check if service worker is registered
+      if (!('serviceWorker' in navigator)) {
+        toast.error('Service workers not supported on this device')
+        return
+      }
+
+      const registration = await navigator.serviceWorker.ready
+      console.log('Service worker ready:', registration)
+
+      // Check if push manager is available
+      if (!('pushManager' in registration)) {
+        toast.error('Push notifications not supported on this device')
+        return
+      }
+
       const notificationService = getNotificationService()
       const permission = await notificationService.requestPermission()
       
       if (permission === 'granted') {
         setPushEnabled(true)
         toast.success('Push notifications enabled!')
+      } else if (permission === 'denied') {
+        toast.error('Push notifications permission denied. Please enable in Settings.')
       } else {
-        toast.error('Push notifications permission denied')
+        toast.error('Push notifications permission not granted')
       }
     } catch (error) {
-      toast.error('Error enabling push notifications')
-      console.error(error)
+      console.error('Push notification error:', error)
+      toast.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 
+  // Check PWA status
+  const isPWA = typeof window !== 'undefined' && (
+    window.matchMedia('(display-mode: standalone)').matches || 
+    (window.navigator as any).standalone === true
+  )
+
   return (
     <div className="container px-4 md:px-6 py-6 md:py-8 max-w-4xl space-y-6">
+      {/* PWA Installation Notice */}
+      {!isPWA && (
+        <Card className="border-amber-200 bg-amber-50">
+          <CardHeader>
+            <CardTitle className="text-amber-900">Install App First</CardTitle>
+            <CardDescription className="text-amber-700">
+              To enable push notifications on iOS:
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm text-amber-700">
+            <ol className="list-decimal list-inside space-y-1">
+              <li>Tap the Share button in Safari</li>
+              <li>Select "Add to Home Screen"</li>
+              <li>Open the app from your home screen</li>
+              <li>Then enable notifications</li>
+            </ol>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Push Notification Permission */}
       {!pushEnabled && (
         <Card>

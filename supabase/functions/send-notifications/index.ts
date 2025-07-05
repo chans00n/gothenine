@@ -1,0 +1,309 @@
+// Follow this setup guide to integrate the Deno language server with your editor:
+// https://deno.land/manual/getting_started/setup_your_environment
+// This enables autocomplete, go to definition, etc.
+
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+interface NotificationPayload {
+  title: string
+  body: string
+  icon?: string
+  badge?: string
+  tag?: string
+  data?: Record<string, any>
+  actions?: Array<{
+    action: string
+    title: string
+  }>
+}
+
+serve(async (req) => {
+  // Handle CORS
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
+
+  try {
+    // Create Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    const supabase = createClient(supabaseUrl, supabaseKey)
+
+    // Get current time
+    const now = new Date()
+    const currentTime = `${now.getUTCHours().toString().padStart(2, '0')}:${now.getUTCMinutes().toString().padStart(2, '0')}`
+    
+    console.log(`Notification cron running at ${now.toISOString()} (${currentTime} UTC)`)
+
+    // Import web-push
+    const webpush = await import('https://esm.sh/web-push@3.6.7')
+    
+    // Set VAPID details
+    const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY')!
+    const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY')!
+    const vapidSubject = Deno.env.get('VAPID_SUBJECT') || 'mailto:noreply@75hard-tracker.com'
+    
+    webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey)
+
+    const notifications: Array<{ userId: string; payload: NotificationPayload }> = []
+
+    // 1. Daily reminders
+    const { data: dailyUsers } = await supabase
+      .from('notification_preferences')
+      .select('user_id, daily_reminder_time')
+      .eq('enabled', true)
+      .eq('daily_reminder', true)
+
+    if (dailyUsers) {
+      for (const user of dailyUsers) {
+        // Check if user's time matches current time (with 5-minute window)
+        const userTime = user.daily_reminder_time
+        if (isTimeMatch(currentTime, userTime, 5)) {
+          notifications.push({
+            userId: user.user_id,
+            payload: {
+              title: '75 Hard Daily Check-in',
+              body: 'Time to complete your daily tasks! 💪',
+              tag: 'daily',
+              data: { type: 'daily' },
+              actions: [
+                { action: 'open-checklist', title: 'Open Checklist' },
+                { action: 'dismiss', title: 'Dismiss' }
+              ]
+            }
+          })
+        }
+      }
+    }
+
+    // 2. Workout reminders
+    const { data: workoutUsers } = await supabase
+      .from('notification_preferences')
+      .select('user_id, workout_reminder_times')
+      .eq('enabled', true)
+      .eq('workout_reminders', true)
+
+    if (workoutUsers) {
+      for (const user of workoutUsers) {
+        const times = user.workout_reminder_times || []
+        times.forEach((time: string, index: number) => {
+          if (isTimeMatch(currentTime, time, 5)) {
+            notifications.push({
+              userId: user.user_id,
+              payload: {
+                title: `Workout ${index + 1} Reminder`,
+                body: index === 0 ? 'Time for your indoor workout! 🏋️' : 'Time for your outdoor workout! 🏃',
+                tag: 'workout',
+                data: { type: 'workout', workoutNumber: index + 1 },
+                actions: [
+                  { action: 'start-timer', title: 'Start Timer' },
+                  { action: 'mark-complete', title: 'Mark Complete' }
+                ]
+              }
+            })
+          }
+        })
+      }
+    }
+
+    // 3. Water reminders (every 2 hours between 7 AM and 9 PM)
+    const currentHour = now.getUTCHours()
+    const currentMinute = now.getUTCMinutes()
+    
+    if (currentHour >= 7 && currentHour <= 21 && currentMinute === 0 && currentHour % 2 === 1) {
+      const { data: waterUsers } = await supabase
+        .from('notification_preferences')
+        .select('user_id, water_reminder_interval')
+        .eq('enabled', true)
+        .eq('water_reminders', true)
+
+      if (waterUsers) {
+        for (const user of waterUsers) {
+          notifications.push({
+            userId: user.user_id,
+            payload: {
+              title: 'Water Reminder 💧',
+              body: 'Time to drink water! Stay hydrated!',
+              tag: 'water',
+              data: { type: 'water' },
+              actions: [
+                { action: 'log-water', title: 'Log Water' },
+                { action: 'snooze', title: 'Remind Later' }
+              ]
+            }
+          })
+        }
+      }
+    }
+
+    // 4. Reading reminders
+    const { data: readingUsers } = await supabase
+      .from('notification_preferences')
+      .select('user_id, reading_reminder_time')
+      .eq('enabled', true)
+      .eq('reading_reminder', true)
+
+    if (readingUsers) {
+      for (const user of readingUsers) {
+        if (isTimeMatch(currentTime, user.reading_reminder_time, 5)) {
+          notifications.push({
+            userId: user.user_id,
+            payload: {
+              title: 'Reading Time 📚',
+              body: "Don't forget to read your 10 pages today!",
+              tag: 'reading',
+              data: { type: 'reading' },
+              actions: [
+                { action: 'log-reading', title: 'Log Reading' },
+                { action: 'dismiss', title: 'Dismiss' }
+              ]
+            }
+          })
+        }
+      }
+    }
+
+    // 5. Photo reminders
+    const { data: photoUsers } = await supabase
+      .from('notification_preferences')
+      .select('user_id, photo_reminder_time')
+      .eq('enabled', true)
+      .eq('photo_reminder', true)
+
+    if (photoUsers) {
+      for (const user of photoUsers) {
+        if (isTimeMatch(currentTime, user.photo_reminder_time, 5)) {
+          notifications.push({
+            userId: user.user_id,
+            payload: {
+              title: 'Progress Photo 📸',
+              body: 'Time to take your daily progress photo!',
+              tag: 'photo',
+              data: { type: 'photo' },
+              actions: [
+                { action: 'take-photo', title: 'Take Photo' },
+                { action: 'snooze', title: 'Remind Later' }
+              ]
+            }
+          })
+        }
+      }
+    }
+
+    // Send all notifications
+    const results = await sendNotifications(supabase, webpush, notifications)
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        timestamp: now.toISOString(),
+        notificationsSent: results.sent,
+        notificationsFailed: results.failed
+      }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      }
+    )
+  } catch (error) {
+    console.error('Error in send-notifications function:', error)
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 500,
+      }
+    )
+  }
+})
+
+// Helper function to check if times match within a window
+function isTimeMatch(currentTime: string, targetTime: string, windowMinutes: number): boolean {
+  const [currentHour, currentMin] = currentTime.split(':').map(Number)
+  const [targetHour, targetMin] = targetTime.split(':').map(Number)
+  
+  const currentMinutes = currentHour * 60 + currentMin
+  const targetMinutes = targetHour * 60 + targetMin
+  
+  const diff = Math.abs(currentMinutes - targetMinutes)
+  return diff <= windowMinutes
+}
+
+// Send notifications to users
+async function sendNotifications(
+  supabase: any,
+  webpush: any,
+  notifications: Array<{ userId: string; payload: NotificationPayload }>
+): Promise<{ sent: number; failed: number }> {
+  let sent = 0
+  let failed = 0
+
+  // Group notifications by user
+  const notificationsByUser = new Map<string, NotificationPayload[]>()
+  for (const { userId, payload } of notifications) {
+    if (!notificationsByUser.has(userId)) {
+      notificationsByUser.set(userId, [])
+    }
+    notificationsByUser.get(userId)!.push(payload)
+  }
+
+  // Send notifications to each user
+  for (const [userId, payloads] of notificationsByUser) {
+    // Get user's push subscriptions
+    const { data: subscriptions } = await supabase
+      .from('push_subscriptions')
+      .select('*')
+      .eq('user_id', userId)
+
+    if (!subscriptions || subscriptions.length === 0) {
+      failed += payloads.length
+      continue
+    }
+
+    // Send each notification to all user's devices
+    for (const payload of payloads) {
+      for (const subscription of subscriptions) {
+        try {
+          await webpush.sendNotification(
+            {
+              endpoint: subscription.endpoint,
+              keys: {
+                p256dh: subscription.p256dh,
+                auth: subscription.auth
+              }
+            },
+            JSON.stringify({
+              title: payload.title,
+              body: payload.body,
+              icon: payload.icon || '/icon-512x512.png',
+              badge: payload.badge || '/icon-192x192.png',
+              tag: payload.tag,
+              data: payload.data,
+              actions: payload.actions
+            })
+          )
+          sent++
+        } catch (error: any) {
+          failed++
+          console.error(`Failed to send notification to ${userId}:`, error.message)
+          
+          // Remove invalid subscriptions
+          if (error.statusCode === 410) {
+            await supabase
+              .from('push_subscriptions')
+              .delete()
+              .eq('id', subscription.id)
+          }
+        }
+      }
+    }
+  }
+
+  return { sent, failed }
+}

@@ -67,7 +67,7 @@ serve(async (req) => {
           notificationsToSend.push({
             userId: user.user_id,
             payload: {
-              title: '75 Hard Daily Check-in',
+              title: 'Go the Nine Check-in',
               body: 'Time to complete your daily tasks! 💪',
               tag: 'daily',
               data: { type: 'daily' },

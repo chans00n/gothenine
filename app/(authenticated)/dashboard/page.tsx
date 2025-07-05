@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { MinimalChecklist } from '@/components/dashboard/minimal-checklist'
+import { MobileTaskList } from '@/components/dashboard/mobile-task-list'
 import { DashboardHeader } from '@/components/dashboard/dashboard-header'
 import { QuickActions } from '@/components/dashboard/quick-actions'
 import { taskDefinitions, createDailyTasks } from '@/lib/task-definitions'
@@ -389,22 +390,12 @@ export default async function DashboardPage() {
           <div className="grid md:grid-cols-3 gap-6 md:gap-8">
             {/* Today's Tasks - Central focus */}
             <div className="md:col-span-2">
-              <Card className="h-full">
-                <CardHeader className="pb-4">
-                  <CardTitle className="flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5 text-primary" />
-                    Today's Tasks
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Suspense fallback={<DailyChecklistSkeleton />}>
-                    <MinimalChecklist 
-                      tasks={dailyTasks}
-                      onTaskToggle={handleTaskToggle}
-                    />
-                  </Suspense>
-                </CardContent>
-              </Card>
+              <Suspense fallback={<DailyChecklistSkeleton />}>
+                <MobileTaskList 
+                  tasks={dailyTasks}
+                  onTaskToggle={handleTaskToggle}
+                />
+              </Suspense>
             </div>
 
             {/* Quick Actions & Motivation */}

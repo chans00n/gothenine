@@ -94,13 +94,43 @@ export default function TestNotificationsPage() {
       }
 
       // Check if service worker is registered
+      console.log('Checking service worker support...')
       if (!('serviceWorker' in navigator)) {
         toast.error('Service workers not supported on this device')
+        setLoading(null)
+        return
+      }
+      console.log('Service worker supported')
+      
+      // Check current registrations
+      const registrations = await navigator.serviceWorker.getRegistrations()
+      console.log('Current service worker registrations:', registrations.length)
+      
+      if (registrations.length === 0) {
+        console.error('No service worker registered!')
+        toast.error('No service worker found. Please refresh the page and try again.')
+        setLoading(null)
         return
       }
 
-      const registration = await navigator.serviceWorker.ready
-      console.log('Service worker ready:', registration)
+      console.log('Waiting for service worker to be ready...')
+      
+      // Add timeout for service worker ready
+      const registrationPromise = navigator.serviceWorker.ready
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Service worker timeout')), 10000)
+      )
+      
+      let registration
+      try {
+        registration = await Promise.race([registrationPromise, timeoutPromise]) as ServiceWorkerRegistration
+        console.log('Service worker ready:', registration)
+      } catch (timeoutError) {
+        console.error('Service worker failed to become ready')
+        toast.error('Service worker not responding. Please refresh and try again.')
+        setLoading(null)
+        return
+      }
 
       // Check if push manager is available
       if (!('pushManager' in registration)) {

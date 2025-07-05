@@ -35,11 +35,21 @@ export default function TestNotificationsPage() {
       return
     }
 
-    const registrations = await navigator.serviceWorker.getRegistrations()
-    if (registrations.length > 0) {
-      setSwStatus(`Registered (${registrations.length})`)
-    } else {
-      setSwStatus('Not registered')
+    try {
+      const registrations = await navigator.serviceWorker.getRegistrations()
+      console.log('Service worker registrations found:', registrations.length)
+      
+      if (registrations.length > 0) {
+        setSwStatus(`Registered (${registrations.length})`)
+        // Also update the UI to reflect we can now enable push
+        const notificationService = getNotificationService()
+        setPushEnabled(notificationService.getPermissionStatus() === 'granted')
+      } else {
+        setSwStatus('Not registered')
+      }
+    } catch (error) {
+      console.error('Error checking service worker:', error)
+      setSwStatus('Error checking')
     }
   }
 
@@ -60,12 +70,12 @@ export default function TestNotificationsPage() {
       
       console.log('Service worker registered:', registration)
       
-      // Wait for it to be ready
-      await navigator.serviceWorker.ready
-      console.log('Service worker is ready')
-      
+      // Don't wait for ready - just check if it registered
       toast.success('Service worker registered successfully!')
       await checkServiceWorker()
+      
+      // Force a small delay to ensure registration is complete
+      await new Promise(resolve => setTimeout(resolve, 1000))
     } catch (error) {
       console.error('Service worker registration error:', error)
       toast.error('Failed to register service worker')

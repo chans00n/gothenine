@@ -115,7 +115,10 @@ export function CalendarGrid({
 
   // Get the first day of the month to calculate offset
   const firstDayOfMonth = currentMonthData.days[0]?.date
-  const startOffset = firstDayOfMonth ? firstDayOfMonth.getDay() : 0
+  const firstDate = firstDayOfMonth 
+    ? (typeof firstDayOfMonth === 'string' ? new Date(firstDayOfMonth) : firstDayOfMonth)
+    : null
+  const startOffset = firstDate ? firstDate.getDay() : 0
 
   if (isLoading) {
     return <CalendarGridSkeleton />

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Service Worker Test</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        button { padding: 10px 20px; margin: 10px 0; font-size: 16px; }
+        .log { background: #f0f0f0; padding: 10px; margin: 10px 0; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <h1>Service Worker Push Test</h1>
+    <button onclick="registerSW()">1. Register Service Worker</button>
+    <button onclick="checkSW()">2. Check Service Worker</button>
+    <button onclick="subscribePush()">3. Subscribe Push</button>
+    <button onclick="testNotification()">4. Test Notification</button>
+    <div id="log"></div>
+
+    <script>
+        const VAPID_PUBLIC_KEY = 'BMFXv_KgGgDNaeH85EeHiHY18WVKIKwbADaK3uMMEF7mlkWGAVjVn75DcadAr_ZyWiAH7HpU5aQEV-vYZzTtd-4';
+        
+        function log(msg) {
+            const logDiv = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.className = 'log';
+            entry.textContent = new Date().toTimeString().split(' ')[0] + ' - ' + msg;
+            logDiv.appendChild(entry);
+            console.log(msg);
+        }
+
+        async function registerSW() {
+            try {
+                log('Registering service worker...');
+                const reg = await navigator.serviceWorker.register('/sw.js');
+                log('Service worker registered: ' + reg.scope);
+                
+                // Wait for it to activate
+                if (reg.installing) {
+                    log('Service worker installing...');
+                    await new Promise(resolve => {
+                        reg.installing.addEventListener('statechange', function() {
+                            if (this.state === 'activated') {
+                                log('Service worker activated!');
+                                resolve();
+                            }
+                        });
+                    });
+                } else if (reg.active) {
+                    log('Service worker already active');
+                }
+            } catch (err) {
+                log('Error: ' + err.message);
+            }
+        }
+
+        async function checkSW() {
+            try {
+                const regs = await navigator.serviceWorker.getRegistrations();
+                log('Registrations found: ' + regs.length);
+                
+                for (const reg of regs) {
+                    log('Registration scope: ' + reg.scope);
+                    log('- Active: ' + (reg.active ? 'Yes' : 'No'));
+                    log('- Waiting: ' + (reg.waiting ? 'Yes' : 'No'));
+                    log('- Installing: ' + (reg.installing ? 'Yes' : 'No'));
+                }
+                
+                const ready = await navigator.serviceWorker.ready;
+                log('Service worker ready: ' + ready.scope);
+            } catch (err) {
+                log('Error: ' + err.message);
+            }
+        }
+
+        async function subscribePush() {
+            try {
+                log('Requesting notification permission...');
+                const permission = await Notification.requestPermission();
+                log('Permission: ' + permission);
+                
+                if (permission !== 'granted') {
+                    log('Permission not granted');
+                    return;
+                }
+                
+                const reg = await navigator.serviceWorker.ready;
+                log('Got service worker registration');
+                
+                const subscription = await reg.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+                });
+                
+                log('Push subscription created!');
+                log('Endpoint: ' + subscription.endpoint.substring(0, 50) + '...');
+            } catch (err) {
+                log('Error: ' + err.message);
+            }
+        }
+
+        async function testNotification() {
+            try {
+                const reg = await navigator.serviceWorker.ready;
+                await reg.showNotification('Test Notification', {
+                    body: 'This is a test notification',
+                    icon: '/icon-192x192.png',
+                    badge: '/icon-192x192.png'
+                });
+                log('Notification shown!');
+            } catch (err) {
+                log('Error: ' + err.message);
+            }
+        }
+
+        function urlBase64ToUint8Array(base64String) {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4);
+            const base64 = (base64String + padding)
+                .replace(/\-/g, '+')
+                .replace(/_/g, '/');
+
+            const rawData = window.atob(base64);
+            const outputArray = new Uint8Array(rawData.length);
+
+            for (let i = 0; i < rawData.length; ++i) {
+                outputArray[i] = rawData.charCodeAt(i);
+            }
+            return outputArray;
+        }
+    </script>
+</body>
+</html>

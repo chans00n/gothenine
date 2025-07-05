@@ -8,6 +8,7 @@ import { Toaster } from '@/components/ui/sonner'
 import { OfflineBanner } from '@/components/ui/offline-indicator'
 import { ErrorBoundary } from '@/components/error-boundary'
 import { ServiceWorkerProvider } from '@/components/providers/service-worker-provider'
+import { ServiceWorkerRegister } from '@/components/service-worker-register'
 import { PerformanceMonitor, PerformanceDebugPanel } from '@/components/performance-monitor'
 import { AccessibilityTest } from '@/components/accessibility-test'
 import { DeviceTest } from '@/components/device-test'
@@ -46,6 +47,7 @@ export default function RootLayout({
         <ThemeProvider defaultTheme="dark" storageKey="75hard-theme">
           <ErrorBoundary>
             <ServiceWorkerProvider>
+              <ServiceWorkerRegister />
               <PerformanceMonitor />
               <PerformanceDebugPanel />
               <AccessibilityTest />

@@ -2,7 +2,7 @@ const withPWA = require('next-pwa')({
   dest: 'public',
   register: true,
   skipWaiting: true,
-  disable: process.env.NODE_ENV === 'development',
+  disable: true, // Disable next-pwa for now, using simple-sw.js
   buildExcludes: [/middleware-manifest.json$/],
   importScripts: ['/sw-notifications.js'],
   runtimeCaching: [

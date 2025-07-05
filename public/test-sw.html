@@ -76,6 +76,20 @@
 
         async function subscribePush() {
             try {
+                // Check if running as PWA
+                const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
+                             window.navigator.standalone === true;
+                log('Running as PWA: ' + isPWA);
+                
+                // Check if Notification API is available
+                if (!('Notification' in window)) {
+                    log('Notification API not available!');
+                    log('This might be because:');
+                    log('- You need to add this page to home screen first');
+                    log('- Or iOS version doesn\'t support it');
+                    return;
+                }
+                
                 log('Requesting notification permission...');
                 const permission = await Notification.requestPermission();
                 log('Permission: ' + permission);

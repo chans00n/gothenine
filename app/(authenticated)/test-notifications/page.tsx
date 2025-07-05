@@ -11,7 +11,7 @@ import {
 } from '@/lib/utils/notification-triggers'
 import { inAppNotificationService } from '@/lib/services/in-app-notification-service'
 import { getNotificationService } from '@/lib/services/notification-service'
-import { Bell, Droplets, Dumbbell, Calendar, Trophy, Zap, Bug } from 'lucide-react'
+import { Bell, Droplets, Dumbbell, Calendar, Trophy, Zap, Bug, RefreshCw } from 'lucide-react'
 
 export default function TestNotificationsPage() {
   const [loading, setLoading] = useState<string | null>(null)
@@ -159,34 +159,33 @@ export default function TestNotificationsPage() {
       }
       console.log('Service worker supported')
       
-      // Check current registrations
-      const registrations = await navigator.serviceWorker.getRegistrations()
-      console.log('Current service worker registrations:', registrations.length)
-      
-      if (registrations.length === 0) {
-        console.error('No service worker registered!')
-        toast.error('No service worker found. Please refresh the page and try again.')
-        setLoading(null)
-        return
-      }
-
-      console.log('Waiting for service worker to be ready...')
-      
-      // Add timeout for service worker ready
-      const registrationPromise = navigator.serviceWorker.ready
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Service worker timeout')), 10000)
-      )
+      // Get the service worker registration directly
+      console.log('Getting service worker registration...')
       
       let registration
       try {
+        // Try to get the ready registration with a shorter timeout
+        const registrationPromise = navigator.serviceWorker.ready
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Service worker timeout')), 5000)
+        )
+        
         registration = await Promise.race([registrationPromise, timeoutPromise]) as ServiceWorkerRegistration
         console.log('Service worker ready:', registration)
       } catch (timeoutError) {
-        console.error('Service worker failed to become ready')
-        toast.error('Service worker not responding. Please refresh and try again.')
-        setLoading(null)
-        return
+        console.log('Service worker ready timed out, getting registrations manually...')
+        
+        // Fallback: get the first registration
+        const registrations = await navigator.serviceWorker.getRegistrations()
+        if (registrations.length > 0) {
+          registration = registrations[0]
+          console.log('Using first registration:', registration)
+        } else {
+          console.error('No service worker registrations found')
+          toast.error('No service worker found. Please register it first.')
+          setLoading(null)
+          return
+        }
       }
 
       // Check if push manager is available
@@ -365,7 +364,17 @@ export default function TestNotificationsPage() {
           <div className="text-sm space-y-1">
             <p>Current Permission: <strong>{typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'Not supported'}</strong></p>
             <p>PWA Mode: <strong>{isPWA ? 'Yes ✅' : 'No ❌'}</strong></p>
-            <p>Service Worker: <strong>{swStatus}</strong></p>
+            <div className="flex items-center justify-between">
+              <p>Service Worker: <strong>{swStatus}</strong></p>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={checkServiceWorker}
+                className="h-6 px-2"
+              >
+                <RefreshCw className="h-3 w-3" />
+              </Button>
+            </div>
           </div>
           
           {swStatus === 'Not registered' && (

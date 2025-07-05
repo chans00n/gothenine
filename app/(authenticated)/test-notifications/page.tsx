@@ -11,11 +11,13 @@ import {
 } from '@/lib/utils/notification-triggers'
 import { inAppNotificationService } from '@/lib/services/in-app-notification-service'
 import { getNotificationService } from '@/lib/services/notification-service'
-import { Bell, Droplets, Dumbbell, Calendar, Trophy, Zap } from 'lucide-react'
+import { Bell, Droplets, Dumbbell, Calendar, Trophy, Zap, Bug } from 'lucide-react'
 
 export default function TestNotificationsPage() {
   const [loading, setLoading] = useState<string | null>(null)
   const [pushEnabled, setPushEnabled] = useState(false)
+  const [debugInfo, setDebugInfo] = useState<any>(null)
+  const [showDebug, setShowDebug] = useState(false)
 
   // Check push notification status on mount
   useEffect(() => {
@@ -123,6 +125,20 @@ export default function TestNotificationsPage() {
     window.matchMedia('(display-mode: standalone)').matches || 
     (window.navigator as any).standalone === true
   )
+
+  const fetchDebugInfo = async () => {
+    setLoading('debug')
+    try {
+      const response = await fetch('/api/notifications/debug')
+      const data = await response.json()
+      setDebugInfo(data)
+      setShowDebug(true)
+    } catch (error) {
+      toast.error('Failed to fetch debug info')
+    } finally {
+      setLoading(null)
+    }
+  }
 
   return (
     <div className="container px-4 md:px-6 py-6 md:py-8 max-w-4xl space-y-6">
@@ -259,6 +275,66 @@ export default function TestNotificationsPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Debug Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Bug className="h-5 w-5" />
+            Debug Information
+          </CardTitle>
+          <CardDescription>
+            Check your notification setup status
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Button 
+            onClick={fetchDebugInfo}
+            disabled={loading === 'debug'}
+            variant="outline"
+            className="w-full"
+          >
+            {loading === 'debug' ? 'Loading...' : 'Fetch Debug Info'}
+          </Button>
+          
+          {showDebug && debugInfo && (
+            <div className="space-y-4 text-sm">
+              <div className="p-3 bg-muted rounded-lg space-y-2">
+                <h4 className="font-medium">Push Subscriptions</h4>
+                <p>Count: {debugInfo.subscriptions.count}</p>
+                {debugInfo.subscriptions.count === 0 && (
+                  <p className="text-amber-600">⚠️ No push subscriptions found! You need to enable notifications first.</p>
+                )}
+                {debugInfo.subscriptions.data && debugInfo.subscriptions.data.map((sub: any, i: number) => (
+                  <div key={i} className="text-xs text-muted-foreground">
+                    <p>Endpoint: {sub.endpoint.substring(0, 50)}...</p>
+                    <p>Created: {new Date(sub.created_at).toLocaleString()}</p>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="p-3 bg-muted rounded-lg space-y-2">
+                <h4 className="font-medium">Notification Preferences</h4>
+                {debugInfo.preferences.data ? (
+                  <>
+                    <p>Enabled: {debugInfo.preferences.data.enabled ? '✅' : '❌'}</p>
+                    <p>Daily Reminders: {debugInfo.preferences.data.daily_reminder ? '✅' : '❌'}</p>
+                  </>
+                ) : (
+                  <p className="text-amber-600">⚠️ No preferences found</p>
+                )}
+              </div>
+              
+              <div className="p-3 bg-muted rounded-lg space-y-2">
+                <h4 className="font-medium">Environment</h4>
+                <p>VAPID Public Key: {debugInfo.environment.hasVapidPublicKey ? '✅' : '❌'}</p>
+                <p>VAPID Private Key: {debugInfo.environment.hasVapidPrivateKey ? '✅' : '❌'}</p>
+                <p>Service Role Key: {debugInfo.environment.hasServiceRoleKey ? '✅' : '❌'}</p>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }

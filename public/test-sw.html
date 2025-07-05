@@ -32,7 +32,8 @@
         async function registerSW() {
             try {
                 log('Registering service worker...');
-                const reg = await navigator.serviceWorker.register('/sw.js');
+                // Use simple-sw.js for testing
+                const reg = await navigator.serviceWorker.register('/simple-sw.js');
                 log('Service worker registered: ' + reg.scope);
                 
                 // Wait for it to activate

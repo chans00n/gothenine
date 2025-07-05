@@ -66,8 +66,8 @@ export default function TestNotificationsPage() {
         return
       }
 
-      // Register the service worker
-      const registration = await navigator.serviceWorker.register('/sw.js', {
+      // Register the service worker - using simple one for iOS testing
+      const registration = await navigator.serviceWorker.register('/simple-sw.js', {
         scope: '/'
       })
       

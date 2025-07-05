@@ -1,21 +1,29 @@
-import webpush from 'web-push'
+import type { PushSubscription as WebPushSubscription } from 'web-push'
 import { createClient } from '@/lib/supabase/server'
 
-// Initialize web-push with VAPID keys
-// You need to generate these keys and add them to your environment variables
-// Run: npx web-push generate-vapid-keys
-const vapidKeys = {
-  publicKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '',
-  privateKey: process.env.VAPID_PRIVATE_KEY || '',
-  subject: process.env.VAPID_SUBJECT || 'mailto:noreply@75hard-tracker.com'
-}
+// Lazy load web-push to avoid build issues
+let webpush: any
 
-if (vapidKeys.publicKey && vapidKeys.privateKey) {
-  webpush.setVapidDetails(
-    vapidKeys.subject,
-    vapidKeys.publicKey,
-    vapidKeys.privateKey
-  )
+const initializeWebPush = async () => {
+  if (!webpush) {
+    webpush = await import('web-push').then(m => m.default)
+    
+    // Initialize web-push with VAPID keys
+    const vapidKeys = {
+      publicKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || '',
+      privateKey: process.env.VAPID_PRIVATE_KEY || '',
+      subject: process.env.VAPID_SUBJECT || 'mailto:noreply@75hard-tracker.com'
+    }
+
+    if (vapidKeys.publicKey && vapidKeys.privateKey) {
+      webpush.setVapidDetails(
+        vapidKeys.subject,
+        vapidKeys.publicKey,
+        vapidKeys.privateKey
+      )
+    }
+  }
+  return webpush
 }
 
 export interface PushNotificationPayload {
@@ -88,6 +96,9 @@ export class PushNotificationService {
     },
     payload: PushNotificationPayload
   ): Promise<void> {
+    // Initialize webpush if not already done
+    const wp = await initializeWebPush()
+    
     const pushSubscription = {
       endpoint: subscription.endpoint,
       keys: {
@@ -97,7 +108,7 @@ export class PushNotificationService {
     }
 
     try {
-      await webpush.sendNotification(
+      await wp.sendNotification(
         pushSubscription,
         JSON.stringify({
           title: payload.title,

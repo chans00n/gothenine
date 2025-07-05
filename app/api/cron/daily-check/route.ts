@@ -7,8 +7,11 @@ import { getPushNotificationService } from '@/lib/services/push-notification-ser
 export async function GET() {
   try {
     // Verify the request is from Vercel Cron
-    const authHeader = headers().get('authorization')
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    const headersList = headers()
+    const authHeader = headersList.get('authorization')
+    
+    // In production, verify the cron secret
+    if (process.env.NODE_ENV === 'production' && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

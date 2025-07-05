@@ -1,5 +1,5 @@
-// Simple service worker for testing
-console.log('Simple service worker loading...');
+// Simple service worker for testing - v3
+console.log('Simple service worker loading v3...');
 
 // Install event - keep it minimal
 self.addEventListener('install', (event) => {
@@ -54,9 +54,9 @@ self.addEventListener('push', (event) => {
         }
       }
       
-      // Handle actions array if present
+      // Handle actions array if present (add to options, not body)
       if (data.actions && Array.isArray(data.actions)) {
-        body = data.actions.join('\n');
+        options.actions = data.actions;
       }
       
       // Copy over any other notification options

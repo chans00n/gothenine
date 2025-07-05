@@ -23,16 +23,23 @@ export async function getUserTimezone(): Promise<string> {
 export function getTodayInTimezone(timezone: string): Date {
   // Get the current date in the user's timezone
   const now = new Date()
-  const dateStr = now.toLocaleDateString('en-US', { 
+  
+  // Format the date in the target timezone
+  const formatter = new Intl.DateTimeFormat('en-US', {
     timeZone: timezone,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit'
   })
   
-  // Parse the date string (MM/DD/YYYY) and create a date at midnight
-  const [month, day, year] = dateStr.split('/')
-  const today = new Date(`${year}-${month}-${day}T00:00:00`)
+  const parts = formatter.formatToParts(now)
+  const year = parts.find(p => p.type === 'year')?.value
+  const month = parts.find(p => p.type === 'month')?.value
+  const day = parts.find(p => p.type === 'day')?.value
+  
+  // Create a date object at midnight in the local timezone
+  // Use Date constructor with separate values to avoid timezone parsing issues
+  const today = new Date(Number(year!), Number(month!) - 1, Number(day!), 0, 0, 0, 0)
   
   return today
 }

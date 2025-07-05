@@ -15,11 +15,14 @@ export function generate75DayCalendar(
 ): CalendarDay[] {
   const calendar: CalendarDay[] = []
   const today = getTodayInTimezone(timezone)
-  today.setHours(0, 0, 0, 0)
+  
+  // Normalize startDate to midnight
+  const normalizedStart = new Date(startDate)
+  normalizedStart.setHours(0, 0, 0, 0)
 
   for (let i = 0; i < 75; i++) {
     const dayNumber = i + 1
-    const date = addDays(startDate, i)
+    const date = addDays(normalizedStart, i)
     date.setHours(0, 0, 0, 0)
     
     let status: DayStatus
@@ -56,7 +59,8 @@ export function generate75DayCalendar(
 
 export function getCurrentDayNumber(startDate: Date, timezone: string = 'America/New_York'): number {
   const today = getTodayInTimezone(timezone)
-  today.setHours(0, 0, 0, 0)
+  
+  // Normalize start date to midnight
   const start = new Date(startDate)
   start.setHours(0, 0, 0, 0)
 
@@ -65,7 +69,7 @@ export function getCurrentDayNumber(startDate: Date, timezone: string = 'America
   }
 
   const diffTime = Math.abs(today.getTime() - start.getTime())
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
   
   return Math.min(diffDays + 1, 75)
 }

@@ -78,10 +78,15 @@ export default function TestNotificationsPage() {
   }
 
   const enablePushNotifications = async () => {
+    console.log('Enable push notifications clicked')
+    setLoading('push-setup')
+    
     try {
       // Check if we're in a PWA context
       const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
                     (window.navigator as any).standalone === true
+      
+      console.log('PWA check:', isPWA)
       
       if (!isPWA) {
         toast.error('Please add this app to your home screen first to enable push notifications')
@@ -105,6 +110,7 @@ export default function TestNotificationsPage() {
 
       // Check current permission
       const currentPermission = Notification.permission
+      console.log('Current permission:', currentPermission)
       
       if (currentPermission === 'granted') {
         // Permission already granted, just subscribe
@@ -115,6 +121,7 @@ export default function TestNotificationsPage() {
       } else {
         // Request permission
         const permission = await Notification.requestPermission()
+        console.log('Permission result:', permission)
         
         if (permission === 'granted') {
           await subscribeToPushNotifications(registration)
@@ -128,6 +135,8 @@ export default function TestNotificationsPage() {
     } catch (error) {
       console.error('Push notification error:', error)
       toast.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } finally {
+      setLoading(null)
     }
   }
 
@@ -271,8 +280,12 @@ export default function TestNotificationsPage() {
             <p>PWA Mode: <strong>{isPWA ? 'Yes ✅' : 'No ❌'}</strong></p>
           </div>
           
-          <Button onClick={enablePushNotifications} className="w-full">
-            {pushEnabled ? 'Re-subscribe to Push Notifications' : 'Enable Push Notifications'}
+          <Button 
+            onClick={enablePushNotifications} 
+            className="w-full"
+            disabled={loading === 'push-setup'}
+          >
+            {loading === 'push-setup' ? 'Setting up...' : (pushEnabled ? 'Re-subscribe to Push Notifications' : 'Enable Push Notifications')}
           </Button>
           
           {!isPWA && (

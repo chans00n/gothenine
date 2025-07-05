@@ -6,7 +6,7 @@ import { DayStatus } from "@/types/calendar"
 
 interface CalendarDayProps {
   dayNumber: number
-  date: Date
+  date: Date | string
   status: DayStatus
   tasksCompleted?: number
   totalTasks?: number
@@ -62,7 +62,7 @@ export function CalendarDay({
     >
       {/* Date */}
       <div className="text-sm font-bold">
-        {date.getDate()}
+        {typeof date === 'string' ? new Date(date).getDate() : date.getDate()}
       </div>
       
       {/* Progress indicator for partial days */}

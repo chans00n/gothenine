@@ -13,7 +13,7 @@ import {
 
 interface CalendarDayProps {
   dayNumber: number
-  date: Date
+  date: Date | string
   status: DayStatus
   tasksCompleted?: number
   totalTasks?: number
@@ -93,7 +93,7 @@ export function CalendarDay({
 
       {/* Date - Large and centered */}
       <div className="text-xl md:text-2xl font-bold">
-        {date.getDate()}
+        {typeof date === 'string' ? new Date(date).getDate() : date.getDate()}
       </div>
 
       {/* Day Number - Small below date */}

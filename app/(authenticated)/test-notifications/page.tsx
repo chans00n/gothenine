@@ -103,21 +103,91 @@ export default function TestNotificationsPage() {
         return
       }
 
-      const notificationService = getNotificationService()
-      const permission = await notificationService.requestPermission()
+      // Check current permission
+      const currentPermission = Notification.permission
       
-      if (permission === 'granted') {
-        setPushEnabled(true)
-        toast.success('Push notifications enabled!')
-      } else if (permission === 'denied') {
-        toast.error('Push notifications permission denied. Please enable in Settings.')
+      if (currentPermission === 'granted') {
+        // Permission already granted, just subscribe
+        await subscribeToPushNotifications(registration)
+      } else if (currentPermission === 'denied') {
+        toast.error('Push notifications are blocked. Please enable in iOS Settings > Notifications > Safari/Your App')
+        return
       } else {
-        toast.error('Push notifications permission not granted')
+        // Request permission
+        const permission = await Notification.requestPermission()
+        
+        if (permission === 'granted') {
+          await subscribeToPushNotifications(registration)
+        } else {
+          toast.error('Push notification permission denied')
+          return
+        }
       }
+      
+      setPushEnabled(true)
     } catch (error) {
       console.error('Push notification error:', error)
       toast.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
+  }
+
+  const subscribeToPushNotifications = async (registration: ServiceWorkerRegistration) => {
+    try {
+      // Check if already subscribed
+      let subscription = await registration.pushManager.getSubscription()
+      
+      if (!subscription) {
+        // Subscribe with VAPID public key
+        const vapidPublicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY
+        if (!vapidPublicKey) {
+          throw new Error('VAPID public key not configured')
+        }
+        
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
+        })
+      }
+      
+      // Send subscription to server
+      const response = await fetch('/api/notifications/subscribe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(subscription.toJSON())
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to save subscription on server')
+      }
+      
+      toast.success('Push notifications subscribed successfully!')
+      
+      // Refresh debug info if it's showing
+      if (showDebug) {
+        await fetchDebugInfo()
+      }
+    } catch (error) {
+      console.error('Push subscription error:', error)
+      throw error
+    }
+  }
+
+  // Helper function to convert VAPID key
+  const urlBase64ToUint8Array = (base64String: string): Uint8Array => {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4)
+    const base64 = (base64String + padding)
+      .replace(/\-/g, '+')
+      .replace(/_/g, '/')
+
+    const rawData = window.atob(base64)
+    const outputArray = new Uint8Array(rawData.length)
+
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i)
+    }
+    return outputArray
   }
 
   // Check PWA status

@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { useWorkoutTimer } from '@/hooks/use-workout-timer'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Play, Pause, Square, CheckCircle2, Timer } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -68,17 +67,8 @@ export function WorkoutTimer({ onComplete, className }: WorkoutTimerProps) {
   const progress = targetDuration ? (seconds / targetDuration) * 100 : 0
 
   return (
-    <Card className={cn('w-full', className)}>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Timer className="h-5 w-5" />
-          Workout Timer
-        </CardTitle>
-        <CardDescription>
-          Track your workout duration. Select a preset or start freely.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
+    <div className={cn('w-full bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-6 shadow-sm', className)}>
+      <div className="space-y-6">
         {/* Timer Display */}
         <div className="text-center">
           <div className="text-6xl font-mono font-bold mb-2">
@@ -184,8 +174,8 @@ export function WorkoutTimer({ onComplete, className }: WorkoutTimerProps) {
             )}
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }
 

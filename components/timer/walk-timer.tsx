@@ -77,17 +77,8 @@ export function WalkTimer({ onComplete, className }: WalkTimerProps) {
   const progress = (seconds / 2700) * 100 // 45 minutes minimum
 
   return (
-    <Card className={cn('w-full', className)}>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Footprints className="h-5 w-5" />
-          Outdoor Walk Timer
-        </CardTitle>
-        <CardDescription>
-          Track your 45-minute outdoor walk. Remember, one workout must be outdoors!
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
+    <div className={cn('w-full bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-6 shadow-sm', className)}>
+      <div className="space-y-6">
         {/* Timer Display */}
         <div className="text-center">
           <div className="text-6xl font-mono font-bold mb-2">
@@ -243,8 +234,8 @@ export function WalkTimer({ onComplete, className }: WalkTimerProps) {
             )}
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }
 

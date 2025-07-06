@@ -118,32 +118,6 @@ export function useWalkTimer({
     }
   }, [state.isRunning, state.isPaused, onTick])
 
-  // Auto-prompt at 45 minutes
-  useEffect(() => {
-    if (state.seconds >= 2700 && state.isRunning && !state.isPaused && !hasPrompted45Min.current) {
-      hasPrompted45Min.current = true
-      
-      // Give user a moment to see the notification
-      setTimeout(() => {
-        if (state.isRunning && !state.isPaused && state.seconds >= 2700) {
-          // Check if distance has been entered
-          if (state.distance > 0) {
-            if (confirm(`You've reached 45 minutes! Would you like to complete this walk?\n\nDuration: ${formatTime(state.seconds)}\nDistance: ${state.distance} ${state.distanceUnit}`)) {
-              complete()
-            }
-          } else {
-            toast.warning('Add Distance', 'Please enter your walking distance to complete your walk.')
-          }
-        }
-      }, 2000)
-    }
-    
-    // Reset prompt flag if timer is stopped
-    if (!state.isRunning) {
-      hasPrompted45Min.current = false
-    }
-  }, [state.seconds, state.isRunning, state.isPaused, state.distance, state.distanceUnit, complete])
-
   // Show notification
   const showNotification = useCallback((message: string) => {
     // Browser notification if permitted
@@ -360,6 +334,32 @@ export function useWalkTimer({
       }
     }
   }, [])
+
+  // Auto-prompt at 45 minutes
+  useEffect(() => {
+    if (state.seconds >= 2700 && state.isRunning && !state.isPaused && !hasPrompted45Min.current) {
+      hasPrompted45Min.current = true
+      
+      // Give user a moment to see the notification
+      setTimeout(() => {
+        if (state.isRunning && !state.isPaused && state.seconds >= 2700) {
+          // Check if distance has been entered
+          if (state.distance > 0) {
+            if (confirm(`You've reached 45 minutes! Would you like to complete this walk?\n\nDuration: ${formatTime(state.seconds)}\nDistance: ${state.distance} ${state.distanceUnit}`)) {
+              complete()
+            }
+          } else {
+            toast.warning('Add Distance', 'Please enter your walking distance to complete your walk.')
+          }
+        }
+      }, 2000)
+    }
+    
+    // Reset prompt flag if timer is stopped
+    if (!state.isRunning) {
+      hasPrompted45Min.current = false
+    }
+  }, [state.seconds, state.isRunning, state.isPaused, state.distance, state.distanceUnit, complete])
 
   // Format time helper
   const formatTime = (seconds: number): string => {

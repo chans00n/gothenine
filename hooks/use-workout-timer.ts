@@ -36,6 +36,7 @@ export function useWorkoutTimer({
   const totalElapsedRef = useRef<number>(0)
   const notificationTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const serviceWorkerRef = useRef<ServiceWorker | null>(null)
+  const hasPrompted45Min = useRef(false)
 
   // Handle visibility changes and cleanup
   useEffect(() => {
@@ -105,7 +106,7 @@ export function useWorkoutTimer({
           } else if (newSeconds === 1800) { // 30 minutes
             showNotification('30 minutes done! You\'re crushing it! 🔥')
           } else if (newSeconds === 2700) { // 45 minutes
-            showNotification('45 minutes complete! Almost there! 🎯')
+            showNotification('45 minutes complete! You can now complete your workout! 🎯')
           }
 
           return { ...prev, seconds: newSeconds }
@@ -123,6 +124,30 @@ export function useWorkoutTimer({
       }
     }
   }, [state.isRunning, state.isPaused, targetDuration, onTick])
+
+  // Auto-prompt at 45 minutes if no target set
+  useEffect(() => {
+    if (state.seconds >= 2700 && state.isRunning && !state.isPaused && !hasPrompted45Min.current) {
+      // Only prompt if no target duration set or target is greater than 45 minutes
+      if (!targetDuration || targetDuration > 2700) {
+        hasPrompted45Min.current = true
+        
+        // Give user a moment to see the notification
+        setTimeout(() => {
+          if (state.isRunning && !state.isPaused && state.seconds >= 2700) {
+            if (confirm('You\'ve reached 45 minutes! Would you like to complete this workout?')) {
+              handleComplete()
+            }
+          }
+        }, 2000)
+      }
+    }
+    
+    // Reset prompt flag if timer is stopped
+    if (!state.isRunning) {
+      hasPrompted45Min.current = false
+    }
+  }, [state.seconds, state.isRunning, state.isPaused, targetDuration, handleComplete])
 
   // Show notification
   const showNotification = useCallback((message: string) => {

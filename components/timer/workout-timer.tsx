@@ -153,10 +153,15 @@ export function WorkoutTimer({ onComplete, className }: WorkoutTimerProps) {
                   size="lg"
                   variant="default"
                   onClick={handleComplete}
-                  className="bg-green-600 hover:bg-green-700"
+                  className={cn(
+                    seconds >= 2700 
+                      ? "bg-green-600 hover:bg-green-700 animate-pulse" 
+                      : "bg-green-600 hover:bg-green-700"
+                  )}
                   aria-label="Complete workout"
                 >
                   <CheckCircle2 className="h-4 w-4" />
+                  {seconds >= 2700 && <span className="ml-2">Complete</span>}
                 </Button>
               )}
             </>
@@ -170,6 +175,11 @@ export function WorkoutTimer({ onComplete, className }: WorkoutTimerProps) {
             {targetDuration && progress >= 100 && (
               <div className="text-green-600 font-medium mt-1">
                 Target reached! Keep going or complete your workout.
+              </div>
+            )}
+            {!targetDuration && seconds >= 2700 && (
+              <div className="text-green-600 font-medium mt-1">
+                45 minutes reached! Your workout is ready to complete.
               </div>
             )}
           </div>

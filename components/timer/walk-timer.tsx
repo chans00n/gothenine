@@ -213,10 +213,11 @@ export function WalkTimer({ onComplete, className }: WalkTimerProps) {
                   size="lg"
                   variant="default"
                   onClick={handleComplete}
-                  className="bg-green-600 hover:bg-green-700"
+                  className="bg-green-600 hover:bg-green-700 animate-pulse"
                   aria-label="Complete walk"
                 >
                   <CheckCircle2 className="h-4 w-4" />
+                  <span className="ml-2">Complete Walk</span>
                 </Button>
               )}
             </>
@@ -228,8 +229,8 @@ export function WalkTimer({ onComplete, className }: WalkTimerProps) {
           <div className="text-center text-sm text-muted-foreground">
             {isPaused ? 'Timer paused' : 'Timer running...'}
             {progress >= 100 && (
-              <div className="text-green-600 font-medium mt-1">
-                Minimum time reached! Enter your distance and complete when ready.
+              <div className="text-green-600 dark:text-green-400 font-medium mt-1 animate-pulse">
+                45 minutes reached! Enter your distance and complete when ready.
               </div>
             )}
           </div>

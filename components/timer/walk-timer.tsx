@@ -2,12 +2,11 @@
 
 import { useState } from 'react'
 import { useWalkTimer } from '@/hooks/use-walk-timer'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Play, Pause, Square, CheckCircle2, Footprints, MapPin } from 'lucide-react'
+import { Play, Pause, Square, CheckCircle2, MapPin } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from '@/lib/toast'
 
@@ -74,66 +73,96 @@ export function WalkTimer({ onComplete, className }: WalkTimerProps) {
     }
   }
 
-  const progress = (seconds / 2700) * 100 // 45 minutes minimum
+  // Calculate progress for circular indicator
+  const progress = Math.min((seconds / 2700) * 100, 100) // 45 min goal
+  const circumference = 2 * Math.PI * 120 // radius of 120
+  const strokeDashoffset = circumference - (progress / 100) * circumference
 
   return (
-    <div className={cn('w-full bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-6 shadow-sm', className)}>
-      <div className="space-y-6">
-        {/* Timer Display */}
-        <div className="text-center">
-          <div className="text-6xl font-mono font-bold mb-2">
-            {formattedTime}
-          </div>
-          <div className="text-sm text-muted-foreground">
-            Minimum: 45 minutes
+    <div className={cn('w-full', className)}>
+      <div className="space-y-8">
+        {/* Circular Timer Display */}
+        <div className="relative mx-auto w-80 h-80 md:w-96 md:h-96">
+          {/* Background circle */}
+          <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 250 250">
+            <circle
+              cx="125"
+              cy="125"
+              r="120"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="8"
+              className="text-muted-foreground/20"
+            />
+            {/* Progress circle */}
+            <circle
+              cx="125"
+              cy="125"
+              r="120"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="8"
+              strokeLinecap="round"
+              className={cn(
+                "transition-all duration-1000 ease-linear",
+                progress >= 100 ? "text-green-500" : "text-primary"
+              )}
+              style={{
+                strokeDasharray: circumference,
+                strokeDashoffset: strokeDashoffset
+              }}
+            />
+          </svg>
+          
+          {/* Timer content */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <div className="text-center space-y-2">
+              <div className="text-7xl md:text-8xl font-mono font-bold tracking-tight">
+                {formattedTime}
+              </div>
+              <div className="text-sm text-muted-foreground">
+                Goal: 45 minutes
+              </div>
+              {distance > 0 && seconds > 0 && (
+                <div className="text-lg font-medium">
+                  {pace} per {distanceUnit === 'miles' ? 'mile' : 'km'}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Progress Bar */}
-        <div className="relative h-2 bg-secondary rounded-full overflow-hidden">
-          <div 
-            className={cn(
-              "absolute inset-y-0 left-0 transition-all duration-1000 ease-linear",
-              progress >= 100 ? "bg-green-600" : "bg-primary"
-            )}
-            style={{ width: `${Math.min(progress, 100)}%` }}
-          />
-        </div>
-
-        {/* Distance Input */}
+        {/* Distance Input - Show when timer is active */}
         {showDistanceInput && (
-          <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
-            <div className="flex items-center gap-2 text-sm font-medium">
-              <MapPin className="h-4 w-4" />
+          <div className="max-w-sm mx-auto space-y-3">
+            <div className="flex items-center justify-center gap-2 text-base font-medium">
+              <MapPin className="h-5 w-5" />
               Track Your Distance
             </div>
             
             <div className="flex gap-2">
-              <div className="flex-1">
-                <Label htmlFor="distance" className="sr-only">Distance</Label>
-                <Input
-                  id="distance"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  placeholder="0.0"
-                  value={distance || ''}
-                  onChange={(e) => handleDistanceChange(e.target.value)}
-                  className="text-lg"
-                />
-              </div>
+              <Input
+                id="distance"
+                type="number"
+                step="0.1"
+                min="0"
+                placeholder="0.0"
+                value={distance || ''}
+                onChange={(e) => handleDistanceChange(e.target.value)}
+                className="text-2xl font-bold text-center h-14"
+              />
               
               <RadioGroup 
                 value={distanceUnit} 
                 onValueChange={(value) => setDistanceUnit(value as 'miles' | 'km')}
-                className="flex gap-2"
+                className="flex gap-1"
               >
                 <div className="flex items-center">
                   <RadioGroupItem value="miles" id="miles" className="sr-only" />
                   <Label 
                     htmlFor="miles" 
                     className={cn(
-                      "px-3 py-2 rounded cursor-pointer transition-colors",
+                      "px-4 py-3 rounded-lg cursor-pointer transition-colors text-lg font-medium",
                       distanceUnit === 'miles' 
                         ? "bg-primary text-primary-foreground" 
                         : "bg-secondary hover:bg-secondary/80"
@@ -147,7 +176,7 @@ export function WalkTimer({ onComplete, className }: WalkTimerProps) {
                   <Label 
                     htmlFor="km" 
                     className={cn(
-                      "px-3 py-2 rounded cursor-pointer transition-colors",
+                      "px-4 py-3 rounded-lg cursor-pointer transition-colors text-lg font-medium",
                       distanceUnit === 'km' 
                         ? "bg-primary text-primary-foreground" 
                         : "bg-secondary hover:bg-secondary/80"
@@ -158,35 +187,30 @@ export function WalkTimer({ onComplete, className }: WalkTimerProps) {
                 </div>
               </RadioGroup>
             </div>
-
-            {distance > 0 && seconds > 0 && (
-              <div className="text-sm text-muted-foreground">
-                Pace: {pace} per {distanceUnit === 'miles' ? 'mile' : 'km'}
-              </div>
-            )}
           </div>
         )}
 
         {/* Control Buttons */}
-        <div className="flex gap-2 justify-center">
+        <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
           {!isRunning ? (
             <Button
               size="lg"
               onClick={handleStart}
-              className="min-w-[120px]"
+              className="w-full sm:w-auto min-w-[200px] h-14 text-lg font-semibold"
             >
-              <Play className="h-4 w-4 mr-2" />
+              <Play className="h-5 w-5 mr-2" />
               Start Walk
             </Button>
           ) : (
-            <>
+            <div className="flex gap-3 w-full sm:w-auto">
+              {/* Main action button (Pause/Resume) */}
               {isPaused ? (
                 <Button
                   size="lg"
                   onClick={resume}
-                  className="min-w-[120px]"
+                  className="flex-1 sm:flex-initial min-w-[140px] h-14 text-lg font-semibold"
                 >
-                  <Play className="h-4 w-4 mr-2" />
+                  <Play className="h-5 w-5 mr-2" />
                   Resume
                 </Button>
               ) : (
@@ -194,43 +218,52 @@ export function WalkTimer({ onComplete, className }: WalkTimerProps) {
                   size="lg"
                   variant="secondary"
                   onClick={pause}
-                  className="min-w-[120px]"
+                  className="flex-1 sm:flex-initial min-w-[140px] h-14 text-lg font-semibold"
                 >
-                  <Pause className="h-4 w-4 mr-2" />
+                  <Pause className="h-5 w-5 mr-2" />
                   Pause
                 </Button>
               )}
+              
+              {/* Stop button */}
               <Button
                 size="lg"
                 variant="destructive"
                 onClick={handleStop}
+                className="h-14 px-5"
                 aria-label="Stop walk"
               >
-                <Square className="h-4 w-4" />
+                <Square className="h-5 w-5" />
               </Button>
-              {seconds >= 2700 && ( // Show complete button after 45 minutes
-                <Button
-                  size="lg"
-                  variant="default"
-                  onClick={handleComplete}
-                  className="bg-green-600 hover:bg-green-700 animate-pulse"
-                  aria-label="Complete walk"
-                >
-                  <CheckCircle2 className="h-4 w-4" />
-                  <span className="ml-2">Complete Walk</span>
-                </Button>
-              )}
-            </>
+            </div>
           )}
         </div>
 
+        {/* Complete button - separate row when visible */}
+        {isRunning && seconds >= 2700 && (
+          <div className="flex justify-center">
+            <Button
+              size="lg"
+              variant="default"
+              onClick={handleComplete}
+              className="bg-green-600 hover:bg-green-700 animate-pulse min-w-[200px] h-14 text-lg font-semibold"
+              aria-label="Complete walk"
+            >
+              <CheckCircle2 className="h-5 w-5 mr-2" />
+              Complete Walk
+            </Button>
+          </div>
+        )}
+
         {/* Timer Status */}
         {isRunning && (
-          <div className="text-center text-sm text-muted-foreground">
-            {isPaused ? 'Timer paused' : 'Timer running...'}
+          <div className="text-center space-y-2">
+            <div className="text-sm text-muted-foreground">
+              {isPaused ? 'Timer paused' : 'Timer running...'}
+            </div>
             {progress >= 100 && (
-              <div className="text-green-600 dark:text-green-400 font-medium mt-1 animate-pulse">
-                45 minutes reached! Enter your distance and complete when ready.
+              <div className="text-green-600 dark:text-green-400 font-medium animate-pulse">
+                🎯 45 minutes reached! Enter your distance and complete when ready.
               </div>
             )}
           </div>

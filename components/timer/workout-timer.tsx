@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { useWorkoutTimer } from '@/hooks/use-workout-timer'
 import { Button } from '@/components/ui/button'
-import { Play, Pause, Square, CheckCircle2, Timer } from 'lucide-react'
+import { Play, Pause, Square, CheckCircle2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { toast } from '@/lib/toast'
 
@@ -64,42 +64,77 @@ export function WorkoutTimer({ onComplete, className }: WorkoutTimerProps) {
     }
   }
 
-  const progress = targetDuration ? (seconds / targetDuration) * 100 : 0
+  // Calculate progress for circular indicator
+  const progress = Math.min((seconds / 2700) * 100, 100) // 45 min goal
+  const circumference = 2 * Math.PI * 120 // radius of 120
+  const strokeDashoffset = circumference - (progress / 100) * circumference
 
   return (
-    <div className={cn('w-full bg-card/50 backdrop-blur-sm border border-border/50 rounded-2xl p-6 shadow-sm', className)}>
-      <div className="space-y-6">
-        {/* Timer Display */}
-        <div className="text-center">
-          <div className="text-6xl font-mono font-bold mb-2">
-            {formattedTime}
-          </div>
-          {targetDuration && (
-            <div className="text-sm text-muted-foreground">
-              Target: {formatDuration(targetDuration)}
+    <div className={cn('w-full', className)}>
+      <div className="space-y-8">
+        {/* Circular Timer Display */}
+        <div className="relative mx-auto w-80 h-80 md:w-96 md:h-96">
+          {/* Background circle */}
+          <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 250 250">
+            <circle
+              cx="125"
+              cy="125"
+              r="120"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="8"
+              className="text-muted-foreground/20"
+            />
+            {/* Progress circle */}
+            <circle
+              cx="125"
+              cy="125"
+              r="120"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="8"
+              strokeLinecap="round"
+              className={cn(
+                "transition-all duration-1000 ease-linear",
+                seconds >= 2700 ? "text-green-500" : "text-primary"
+              )}
+              style={{
+                strokeDasharray: circumference,
+                strokeDashoffset: strokeDashoffset
+              }}
+            />
+          </svg>
+          
+          {/* Timer content */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center">
+            <div className="text-center space-y-2">
+              <div className="text-7xl md:text-8xl font-mono font-bold tracking-tight">
+                {formattedTime}
+              </div>
+              {targetDuration && (
+                <div className="text-sm text-muted-foreground">
+                  Target: {formatDuration(targetDuration)}
+                </div>
+              )}
+              {!targetDuration && (
+                <div className="text-sm text-muted-foreground">
+                  Goal: 45 minutes
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
 
-        {/* Progress Bar */}
-        {targetDuration && (
-          <div className="relative h-2 bg-secondary rounded-full overflow-hidden">
-            <div 
-              className="absolute inset-y-0 left-0 bg-primary transition-all duration-1000 ease-linear"
-              style={{ width: `${Math.min(progress, 100)}%` }}
-            />
-          </div>
-        )}
-
-        {/* Preset Buttons */}
+        {/* Preset Buttons - Only show when not running */}
         {!isRunning && (
-          <div className="flex gap-2 justify-center">
+          <div className="flex gap-3 justify-center">
             {PRESET_DURATIONS.map((preset) => (
               <Button
                 key={preset.seconds}
                 variant={targetDuration === preset.seconds ? "default" : "outline"}
-                size="sm"
+                size="default"
                 onClick={() => handlePresetClick(preset.seconds)}
+                className="min-w-[80px]"
               >
                 {preset.label}
               </Button>
@@ -108,25 +143,26 @@ export function WorkoutTimer({ onComplete, className }: WorkoutTimerProps) {
         )}
 
         {/* Control Buttons */}
-        <div className="flex gap-2 justify-center">
+        <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
           {!isRunning ? (
             <Button
               size="lg"
               onClick={handleStart}
-              className="min-w-[120px]"
+              className="w-full sm:w-auto min-w-[200px] h-14 text-lg font-semibold"
             >
-              <Play className="h-4 w-4 mr-2" />
-              Start
+              <Play className="h-5 w-5 mr-2" />
+              Start Workout
             </Button>
           ) : (
-            <>
+            <div className="flex gap-3 w-full sm:w-auto">
+              {/* Main action button (Pause/Resume) */}
               {isPaused ? (
                 <Button
                   size="lg"
                   onClick={resume}
-                  className="min-w-[120px]"
+                  className="flex-1 sm:flex-initial min-w-[140px] h-14 text-lg font-semibold"
                 >
-                  <Play className="h-4 w-4 mr-2" />
+                  <Play className="h-5 w-5 mr-2" />
                   Resume
                 </Button>
               ) : (
@@ -134,52 +170,62 @@ export function WorkoutTimer({ onComplete, className }: WorkoutTimerProps) {
                   size="lg"
                   variant="secondary"
                   onClick={pause}
-                  className="min-w-[120px]"
+                  className="flex-1 sm:flex-initial min-w-[140px] h-14 text-lg font-semibold"
                 >
-                  <Pause className="h-4 w-4 mr-2" />
+                  <Pause className="h-5 w-5 mr-2" />
                   Pause
                 </Button>
               )}
+              
+              {/* Stop button */}
               <Button
                 size="lg"
                 variant="destructive"
                 onClick={handleStop}
+                className="h-14 px-5"
                 aria-label="Stop workout"
               >
-                <Square className="h-4 w-4" />
+                <Square className="h-5 w-5" />
               </Button>
-              {seconds >= 300 && ( // Show complete button after 5 minutes
-                <Button
-                  size="lg"
-                  variant="default"
-                  onClick={handleComplete}
-                  className={cn(
-                    seconds >= 2700 
-                      ? "bg-green-600 hover:bg-green-700 animate-pulse" 
-                      : "bg-green-600 hover:bg-green-700"
-                  )}
-                  aria-label="Complete workout"
-                >
-                  <CheckCircle2 className="h-4 w-4" />
-                  {seconds >= 2700 && <span className="ml-2">Complete</span>}
-                </Button>
-              )}
-            </>
+            </div>
           )}
         </div>
 
+        {/* Complete button - separate row when visible */}
+        {isRunning && seconds >= 300 && (
+          <div className="flex justify-center">
+            <Button
+              size="lg"
+              variant="default"
+              onClick={handleComplete}
+              className={cn(
+                "min-w-[200px] h-14 text-lg font-semibold",
+                seconds >= 2700 
+                  ? "bg-green-600 hover:bg-green-700 animate-pulse" 
+                  : "bg-green-600 hover:bg-green-700"
+              )}
+              aria-label="Complete workout"
+            >
+              <CheckCircle2 className="h-5 w-5 mr-2" />
+              {seconds >= 2700 ? "Complete Workout" : "Finish Early"}
+            </Button>
+          </div>
+        )}
+
         {/* Timer Status */}
         {isRunning && (
-          <div className="text-center text-sm text-muted-foreground">
-            {isPaused ? 'Timer paused' : 'Timer running...'}
+          <div className="text-center space-y-2">
+            <div className="text-sm text-muted-foreground">
+              {isPaused ? 'Timer paused' : 'Timer running...'}
+            </div>
             {targetDuration && progress >= 100 && (
-              <div className="text-green-600 font-medium mt-1">
+              <div className="text-green-600 dark:text-green-400 font-medium">
                 Target reached! Keep going or complete your workout.
               </div>
             )}
             {!targetDuration && seconds >= 2700 && (
-              <div className="text-green-600 font-medium mt-1">
-                45 minutes reached! Your workout is ready to complete.
+              <div className="text-green-600 dark:text-green-400 font-medium animate-pulse">
+                🎯 45 minutes reached! Your workout is ready to complete.
               </div>
             )}
           </div>

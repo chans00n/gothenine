@@ -58,16 +58,30 @@ export function useWorkoutTimer({
     
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [state.isRunning, state.isPaused, state.seconds])
+  
+  // Cleanup on unmount only
+  useEffect(() => {
+    const isRunningRef = { current: false };
+    
+    // Update ref when state changes
+    isRunningRef.current = state.isRunning;
+    
+    return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current)
       }
       if (notificationTimeoutRef.current) {
         clearTimeout(notificationTimeoutRef.current)
       }
-      releaseWakeLock()
-      stopSilentAudio()
+      // Only release wake lock if timer was not running when component unmounts
+      if (!isRunningRef.current) {
+        releaseWakeLock()
+        stopSilentAudio()
+      }
     }
-  }, [state.isRunning, state.isPaused, state.seconds])
+  }, [state.isRunning])
 
   // Timer tick effect
   useEffect(() => {

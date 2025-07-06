@@ -1,17 +1,23 @@
 // Wake Lock API to prevent screen from sleeping during workouts
 let wakeLock: WakeLockSentinel | null = null;
+let isWakeLockActive = false;
 
 export async function requestWakeLock(): Promise<boolean> {
   try {
     // Check if Wake Lock API is supported
     if ('wakeLock' in navigator) {
-      wakeLock = await navigator.wakeLock.request('screen');
+      // Release existing wake lock if any
+      if (wakeLock !== null) {
+        await wakeLock.release();
+      }
       
-      // Re-acquire wake lock when page becomes visible again
-      document.addEventListener('visibilitychange', async () => {
-        if (document.visibilityState === 'visible' && wakeLock === null) {
-          wakeLock = await navigator.wakeLock.request('screen');
-        }
+      wakeLock = await navigator.wakeLock.request('screen');
+      isWakeLockActive = true;
+      
+      // Handle wake lock release events
+      wakeLock.addEventListener('release', () => {
+        console.log('Wake Lock was released');
+        wakeLock = null;
       });
       
       console.log('Wake Lock acquired');
@@ -23,7 +29,22 @@ export async function requestWakeLock(): Promise<boolean> {
   return false;
 }
 
+// Re-acquire wake lock when page becomes visible
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', async () => {
+    if (document.visibilityState === 'visible' && isWakeLockActive && wakeLock === null) {
+      try {
+        wakeLock = await navigator.wakeLock.request('screen');
+        console.log('Wake Lock re-acquired');
+      } catch (err) {
+        console.error('Failed to re-acquire wake lock:', err);
+      }
+    }
+  });
+}
+
 export async function releaseWakeLock(): Promise<void> {
+  isWakeLockActive = false;
   if (wakeLock) {
     try {
       await wakeLock.release();

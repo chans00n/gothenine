@@ -17,7 +17,7 @@ const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'Go the Nine',
-  description: 'Track your Go the Nine Challenge progress',
+  description: 'Go the whole nine. Every single day.',
   manifest: '/manifest.json',
 }
 
